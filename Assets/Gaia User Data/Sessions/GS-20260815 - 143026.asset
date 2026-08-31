@@ -1,0 +1,59 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e251860fcd970734c9f14ebd98a146c3, type: 3}
+  m_Name: GS-20260815 - 143026
+  m_EditorClassIdentifier: 
+  m_name: Session 20260815-143026
+  m_description: 'Rocking out at Creativity Central!
+
+
+    If you like Gaia please
+    consider rating it :)'
+  m_previewImage: {fileID: 0}
+  m_dateCreated: 2026/8/15 14:30:26
+  m_terrainWidth: 1024
+  m_terrainDepth: 1024
+  m_terrainHeight: 1024
+  m_seaLevel: 15
+  m_spawnDensity: 1
+  m_isLocked: 0
+  m_previewImageBytes: 
+  m_previewImageWidth: 0
+  m_previewImageHeight: 0
+  m_operations: []
+  m_terrainMinMaxCache:
+  - guid: b5b9d29a409896742afc7e0bf8e0b75d
+    isWorldmap: 0
+    recalculate: 0
+    min: 0
+    max: 61.157185
+  - guid: Worldmap
+    isWorldmap: 1
+    recalculate: 0
+    min: 0
+    max: 26.499445
+  m_bakedMaskCacheEntries:
+  - fileName: Terrain_0_0-20260828 - 103618_LayerGameObject_3584_12
+    assetPath: Assets/Procedural Worlds/Packages - Install/Gaia/TerrainCollisionData/Terrain_0_0-20260828
+      - 103618/Terrain_0_0-20260828 - 103618_LayerGameObject_3584_12
+    fullPath: C:/Users/33709/Documents/GitHub/MaXiaoyuan_Proj01/Assets/Procedural
+      Worlds/Packages - Install/Gaia/TerrainCollisionData/Terrain_0_0-20260828 -
+      103618/Terrain_0_0-20260828 - 103618_LayerGameObject_3584_12
+    texture: {fileID: 0}
+  - fileName: Terrain_0_0-20260828 - 103618_LayerTree_3584_5
+    assetPath: Assets/Procedural Worlds/Packages - Install/Gaia/TerrainCollisionData/Terrain_0_0-20260828
+      - 103618/Terrain_0_0-20260828 - 103618_LayerTree_3584_5
+    fullPath: C:/Users/33709/Documents/GitHub/MaXiaoyuan_Proj01/Assets/Procedural
+      Worlds/Packages - Install/Gaia/TerrainCollisionData/Terrain_0_0-20260828 -
+      103618/Terrain_0_0-20260828 - 103618_LayerTree_3584_5
+    texture: {fileID: 0}
+  m_worldBiomeMaskSettings: {fileID: 0}
