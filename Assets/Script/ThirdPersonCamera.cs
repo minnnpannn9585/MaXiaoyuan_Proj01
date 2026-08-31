@@ -17,12 +17,36 @@ public class ThirdPersonCamera : MonoBehaviour
     private Vector3 positionVelocity;
     private bool cursorCaptured = true;
 
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
+    private static void AttachToActiveMainCamera()
+    {
+        Camera activeCamera = Camera.main;
+        if (activeCamera == null)
+        {
+            return;
+        }
+
+        ThirdPersonCamera controller = activeCamera.GetComponent<ThirdPersonCamera>();
+        if (controller == null)
+        {
+            controller = activeCamera.gameObject.AddComponent<ThirdPersonCamera>();
+        }
+
+        controller.DisableConflictingCameraControls();
+    }
+
+    private void Awake()
+    {
+        DisableConflictingCameraControls();
+    }
+
     private void Start()
     {
         FindTarget();
         if (target != null)
         {
             yaw = target.eulerAngles.y;
+            PlaceCameraImmediately();
         }
 
         SetCursorCaptured(true);
@@ -71,6 +95,34 @@ public class ThirdPersonCamera : MonoBehaviour
         if (target == null && PlayerMove.Instance != null)
         {
             target = PlayerMove.Instance.transform;
+        }
+    }
+
+    private void PlaceCameraImmediately()
+    {
+        Vector3 pivot = target.position + Vector3.up * targetHeight;
+        Quaternion orbitRotation = Quaternion.Euler(pitch, yaw, 0f);
+        Vector3 direction = orbitRotation * Vector3.back;
+        float allowedDistance = FindAllowedDistance(pivot, direction, distance);
+        transform.position = pivot + direction * allowedDistance;
+        transform.rotation = Quaternion.LookRotation(pivot - transform.position, Vector3.up);
+        positionVelocity = Vector3.zero;
+    }
+
+    private void DisableConflictingCameraControls()
+    {
+        MonoBehaviour[] behaviours = GetComponents<MonoBehaviour>();
+        foreach (MonoBehaviour behaviour in behaviours)
+        {
+            if (behaviour == null || behaviour == this)
+            {
+                continue;
+            }
+
+            if (behaviour.GetType().FullName == "Gaia.FreeCamera")
+            {
+                behaviour.enabled = false;
+            }
         }
     }
 

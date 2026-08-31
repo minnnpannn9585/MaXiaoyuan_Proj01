@@ -2,6 +2,8 @@ using UnityEngine;
 
 public class HunterBullet : MonoBehaviour
 {
+    public const float CollisionRadius = 0.07f;
+
     private Vector3 velocity;
     private float gravity;
     private float lifetime;
@@ -27,7 +29,7 @@ public class HunterBullet : MonoBehaviour
         GameObject bulletObject = GameObject.CreatePrimitive(PrimitiveType.Sphere);
         bulletObject.name = "Hunter Bullet";
         bulletObject.transform.position = position;
-        bulletObject.transform.localScale = Vector3.one * 0.14f;
+        bulletObject.transform.localScale = Vector3.one * (CollisionRadius * 2f);
 
         Collider primitiveCollider = bulletObject.GetComponent<Collider>();
         if (primitiveCollider != null)

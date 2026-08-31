@@ -1,17 +1,23 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 [RequireComponent(typeof(Rigidbody), typeof(Collider))]
 public class PlayerMove : MonoBehaviour
 {
+    private static readonly List<PlayerMove> activePlayers = new List<PlayerMove>();
+
     public static PlayerMove Instance { get; private set; }
+    public static IReadOnlyList<PlayerMove> ActivePlayers => activePlayers;
 
     [Header("Movement")]
     [SerializeField] private float walkSpeed = 4f;
     [SerializeField] private float flightSpeed = 10f;
     [SerializeField] private float flightRiseSpeed = 5f;
+    [SerializeField] private float flightDescendSpeed = 4f;
     [SerializeField] private float airControl = 3f;
     [SerializeField] private float acceleration = 22f;
     [SerializeField] private float turnSpeed = 12f;
+    [SerializeField] private float doubleTapWindow = 0.3f;
 
     [Header("Stamina")]
     [SerializeField] private float maxStamina = 100f;
@@ -29,8 +35,11 @@ public class PlayerMove : MonoBehaviour
     private Vector2 moveInput;
     private float currentStamina;
     private float stunUntil;
+    private float lastSpacePressTime = float.NegativeInfinity;
     private bool flightLocked;
     private bool isGrounded;
+    private bool isFlying;
+    private bool hasLeftTakeoffSurface;
 
     public float CurrentStamina => currentStamina;
     public float MaxStamina => maxStamina;
@@ -38,11 +47,16 @@ public class PlayerMove : MonoBehaviour
     public float CurrentSpeed => body == null ? 0f : body.velocity.magnitude;
     public float NormalizedSpeed => Mathf.Clamp01(CurrentSpeed / flightSpeed);
     public bool IsGrounded => isGrounded;
+    public bool IsFlying => isFlying;
     public bool IsStunned => Time.time < stunUntil;
 
     private void Awake()
     {
-        Instance = this;
+        if (Instance == null)
+        {
+            Instance = this;
+        }
+
         body = GetComponent<Rigidbody>();
         bodyCollider = GetComponent<Collider>();
         currentStamina = maxStamina;
@@ -54,11 +68,35 @@ public class PlayerMove : MonoBehaviour
         body.drag = 0.5f;
     }
 
+    private void OnEnable()
+    {
+        if (!activePlayers.Contains(this))
+        {
+            activePlayers.Add(this);
+        }
+
+        if (Instance == null)
+        {
+            Instance = this;
+        }
+    }
+
+    private void OnDisable()
+    {
+        RemoveFromActivePlayers();
+    }
+
     private void OnDestroy()
     {
+        RemoveFromActivePlayers();
+    }
+
+    private void RemoveFromActivePlayers()
+    {
+        activePlayers.Remove(this);
         if (Instance == this)
         {
-            Instance = null;
+            Instance = activePlayers.Count > 0 ? activePlayers[0] : null;
         }
     }
 
@@ -72,6 +110,7 @@ public class PlayerMove : MonoBehaviour
 
         moveInput = new Vector2(Input.GetAxisRaw("Horizontal"), Input.GetAxisRaw("Vertical"));
         moveInput = Vector2.ClampMagnitude(moveInput, 1f);
+        HandleFlightToggleInput();
     }
 
     private void FixedUpdate()
@@ -79,17 +118,31 @@ public class PlayerMove : MonoBehaviour
         isGrounded = CheckGrounded();
 
         bool gameRunning = GameManager.Instance == null || GameManager.Instance.IsRunning;
-        bool wantsToFly = gameRunning && !IsStunned && !flightLocked &&
-                          currentStamina > 0f && Input.GetKey(KeyCode.Space);
+        if (!gameRunning && isFlying)
+        {
+            ExitFlightMode();
+        }
 
-        if (wantsToFly)
+        if (isFlying)
+        {
+            if (!isGrounded)
+            {
+                hasLeftTakeoffSurface = true;
+            }
+            else if (hasLeftTakeoffSurface)
+            {
+                ExitFlightMode();
+            }
+        }
+
+        if (isFlying)
         {
             currentStamina = Mathf.Max(0f, currentStamina - flightDrainPerSecond * Time.fixedDeltaTime);
             if (currentStamina <= 0f)
             {
                 flightLocked = true;
                 stunUntil = Time.time + exhaustionStunSeconds;
-                wantsToFly = false;
+                ExitFlightMode();
             }
         }
         else if (isGrounded)
@@ -108,7 +161,7 @@ public class PlayerMove : MonoBehaviour
         }
 
         Vector3 moveDirection = GetCameraRelativeDirection();
-        float targetSpeed = wantsToFly ? flightSpeed : (isGrounded ? walkSpeed : airControl);
+        float targetSpeed = isFlying ? flightSpeed : (isGrounded ? walkSpeed : airControl);
         Vector3 targetHorizontal = moveDirection * targetSpeed;
         Vector3 currentHorizontal = new Vector3(body.velocity.x, 0f, body.velocity.z);
         Vector3 nextHorizontal = Vector3.MoveTowards(
@@ -116,7 +169,23 @@ public class PlayerMove : MonoBehaviour
             targetHorizontal,
             acceleration * Time.fixedDeltaTime);
 
-        float verticalVelocity = wantsToFly ? flightRiseSpeed : body.velocity.y;
+        float verticalVelocity = body.velocity.y;
+        if (isFlying)
+        {
+            if (Input.GetKey(KeyCode.Space))
+            {
+                verticalVelocity = flightRiseSpeed;
+            }
+            else if (Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift))
+            {
+                verticalVelocity = -flightDescendSpeed;
+            }
+            else
+            {
+                verticalVelocity = 0f;
+            }
+        }
+
         body.velocity = new Vector3(nextHorizontal.x, verticalVelocity, nextHorizontal.z);
 
         if (moveDirection.sqrMagnitude > 0.01f)
@@ -140,6 +209,50 @@ public class PlayerMove : MonoBehaviour
     private bool CanAcceptInput()
     {
         return !IsStunned && (GameManager.Instance == null || GameManager.Instance.IsRunning);
+    }
+
+    private void HandleFlightToggleInput()
+    {
+        if (!Input.GetKeyDown(KeyCode.Space))
+        {
+            return;
+        }
+
+        float currentTime = Time.unscaledTime;
+        if (currentTime - lastSpacePressTime <= doubleTapWindow)
+        {
+            if (isFlying)
+            {
+                ExitFlightMode();
+            }
+            else if (!flightLocked && currentStamina > 0f)
+            {
+                EnterFlightMode();
+            }
+
+            lastSpacePressTime = float.NegativeInfinity;
+        }
+        else
+        {
+            lastSpacePressTime = currentTime;
+        }
+    }
+
+    private void EnterFlightMode()
+    {
+        isFlying = true;
+        hasLeftTakeoffSurface = !isGrounded;
+        if (isGrounded)
+        {
+            body.velocity = new Vector3(body.velocity.x, flightRiseSpeed, body.velocity.z);
+        }
+    }
+
+    private void ExitFlightMode()
+    {
+        isFlying = false;
+        hasLeftTakeoffSurface = false;
+        lastSpacePressTime = float.NegativeInfinity;
     }
 
     private Vector3 GetCameraRelativeDirection()
