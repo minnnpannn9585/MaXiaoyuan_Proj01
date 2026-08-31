@@ -1,0 +1,87 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3ec960e7dee79fb4495593dba6bc4cba, type: 3}
+  m_Name: Package Config Settings
+  m_EditorClassIdentifier: 
+  m_pWPackageConfigs:
+  - m_packageID: Gaia
+    m_lastAction: 4
+    m_majorVersion: 4
+    m_minorVersion: 2
+    m_patchVersion: 5
+    m_installTimeStamp: 1786688635663
+  - m_packageID: AssetSamples
+    m_lastAction: 4
+    m_majorVersion: 4
+    m_minorVersion: 2
+    m_patchVersion: 5
+    m_installTimeStamp: 1786688668441
+  - m_packageID: AssetSamplesSyntyStudios
+    m_lastAction: 4
+    m_majorVersion: 4
+    m_minorVersion: 2
+    m_patchVersion: 5
+    m_installTimeStamp: 1786688673558
+  - m_packageID: GaiaProAssetsandBiomes
+    m_lastAction: 4
+    m_majorVersion: 4
+    m_minorVersion: 2
+    m_patchVersion: 5
+    m_installTimeStamp: 1786688818269
+  - m_packageID: Stamps
+    m_lastAction: 4
+    m_majorVersion: 4
+    m_minorVersion: 2
+    m_patchVersion: 5
+    m_installTimeStamp: 1786688842178
+  - m_packageID: RuntimeControllerSupport
+    m_lastAction: 4
+    m_majorVersion: 4
+    m_minorVersion: 2
+    m_patchVersion: 5
+    m_installTimeStamp: 1786688848579
+  - m_packageID: GaiaWater
+    m_lastAction: 4
+    m_majorVersion: 4
+    m_minorVersion: 2
+    m_patchVersion: 5
+    m_installTimeStamp: 1786688864625
+  - m_packageID: ProceduralWorldsSky
+    m_lastAction: 4
+    m_majorVersion: 4
+    m_minorVersion: 2
+    m_patchVersion: 5
+    m_installTimeStamp: 1786688879264
+  - m_packageID: SkyLightingPresets
+    m_lastAction: 4
+    m_majorVersion: 4
+    m_minorVersion: 2
+    m_patchVersion: 5
+    m_installTimeStamp: 1786688944230
+  - m_packageID: UnityHDRPWater
+    m_lastAction: 4
+    m_majorVersion: 4
+    m_minorVersion: 2
+    m_patchVersion: 5
+    m_installTimeStamp: 1786688951187
+  - m_packageID: UnityURPWater
+    m_lastAction: 4
+    m_majorVersion: 4
+    m_minorVersion: 2
+    m_patchVersion: 5
+    m_installTimeStamp: 1786688963128
+  - m_packageID: GTS
+    m_lastAction: 4
+    m_majorVersion: 4
+    m_minorVersion: 2
+    m_patchVersion: 5
+    m_installTimeStamp: 1786689168624
