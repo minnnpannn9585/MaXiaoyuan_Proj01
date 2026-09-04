@@ -409,7 +409,7 @@ BoxCollider:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 14690161}
-  m_Material: {fileID: 92826532}
+  m_Material: {fileID: 1913620176}
   m_IncludeLayers:
     serializedVersion: 2
     m_Bits: 0
@@ -1161,18 +1161,6 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 71814748}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
---- !u!134 &92826532
-PhysicMaterial:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_Name: 
-  dynamicFriction: 0.6
-  staticFriction: 0.6
-  bounciness: 0
-  frictionCombine: 0
-  bounceCombine: 0
 --- !u!1 &94292486
 GameObject:
   m_ObjectHideFlags: 0
@@ -1333,7 +1321,7 @@ Transform:
   m_GameObject: {fileID: 98586969}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalPosition: {x: 0, y: 30.579987, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1448,10 +1436,822 @@ MonoBehaviour:
   m_worldDesignerPreviewTileX: -99
   m_worldDesignerPreviewTileZ: -99
   m_worldDesignerClearStampsWarningShown: 0
-  m_maskListBeingDrawn: []
+  m_maskListBeingDrawn:
+  - m_active: 1
+    m_invert: 0
+    m_hasErrors: 0
+    m_influence: 0
+    m_operation: 4
+    m_blendMode: 0
+    m_imageMaskLocation: 1
+    m_strength: 1
+    m_seaLevel: 15
+    m_maxWorldHeight: 61.157185
+    m_minWorldHeight: 0
+    m_xOffSet: 0
+    m_zOffSet: 0
+    m_xOffSetScalar: 0
+    m_zOffSetScalar: 0
+    m_xScale: 1
+    m_zScale: 1
+    m_rotationDegrees: 0
+    m_tiling: 0
+    m_imageMaskSpace: 0
+    m_imageMaskTextureGUID: 
+    m_imageMaskFilterMode: 0
+    m_imageMaskColorSelectionColor: {r: 1, g: 1, b: 1, a: 1}
+    m_imageMaskColorSelectionAccuracy: 0.5
+    m_distanceMaskCurve:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 0
+        value: 1
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 1
+        value: 0
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+    m_strengthTransformCurve:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 0
+        value: 0
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 0.3
+        value: 0
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0.3333333
+      - serializedVersion: 3
+        time: 0.65753144
+        value: 0.9911301
+        inSlope: 0.04495597
+        outSlope: 0.04495597
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0.18105072
+      - serializedVersion: 3
+        time: 1
+        value: 1
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+    m_heightMaskCurve:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 0
+        value: 0
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 1
+        value: 1
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+    m_heightMaskType: 1
+    m_heightMaskUnit: 1
+    m_relativeHeightMin: 25
+    m_relativeHeightMax: 75
+    m_absoluteHeightMin: 50
+    m_absoluteHeightMax: 150
+    m_seaLevelRelativeHeightMin: -109876.55
+    m_seaLevelRelativeHeightMax: 109876.55
+    tree1active: 0
+    tree2active: 0
+    m_slopeMaskCurve:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 0
+        value: 0
+        inSlope: 1
+        outSlope: 1
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 1
+        value: 1
+        inSlope: 1
+        outSlope: 1
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+    m_slopeMin: 0
+    m_slopeMax: 0.1
+    m_distanceMaskAxes: 0
+    m_gaiaNoiseSettings:
+      m_translation: {x: 4.8807735, y: 0, z: -0.33202538}
+      m_rotation: {x: 0, y: 0, z: 0}
+      m_scale: {x: 8.49985, y: 1, z: 8.49985}
+      m_noiseTypeName: Perlin
+      m_noiseTypeParams: 
+      m_fractalTypeName: Fbm
+      m_fractalTypeParams: '{"warpOffsets":{"x":2.5,"y":1.399999976158142,"z":3.200000047683716,"w":2.700000047683716},"octavesMinMax":{"x":0.0,"y":16.0},"amplitudeMinMax":{"x":0.0,"y":1.0},"frequencyMinMax":{"x":0.0,"y":2.0},"lacunarityMinMax":{"x":0.0,"y":4.0},"persistenceMinMax":{"x":0.0,"y":1.0},"warpIterationsMinMax":{"x":0.0,"y":8.0},"warpStrengthMinMax":{"x":-2.0,"y":2.0},"octaves":8.0,"amplitude":0.5,"frequency":1.0,"persistence":0.5,"lacunarity":2.0,"warpIterations":1.0,"warpStrength":0.5,"warpEnabled":false,"warpExpanded":true}'
+      m_warpEnabled: 0
+      m_warpIterations: 0
+      m_warpStrength: 0
+      m_warpOffset: {x: 0, y: 0, z: 0, w: 0}
+    m_noiseSettings: {fileID: 2070947214}
+    m_noiseToolSettings:
+      worldHeightRemap: {x: 0, y: 0}
+      coordSpace: 0
+      noiseAssetGUID: 
+    m_ShowNoiseTransformSettings: 0
+    m_ShowNoisePreviewTexture: 0
+    m_noisePreviewTextureLocked: 1
+    m_ShowNoiseTypeSettings: 1
+    m_scaleNoiseToTerrainSize: 0
+    m_distanceMaskSquareRoundness: 0.25
+    m_collisionMaskExpanded: 1
+    m_collisionMasks: []
+    m_allPolyMasks: []
+    m_selectedPolyMaskObject: {fileID: 0}
+    m_erosionMaskOutput: 0
+    m_erosionSimScale: 9
+    m_erosionHydroTimeDelta: 0.05
+    m_erosionHydroIterations: 15
+    m_erosionThermalTimeDelta: 0.01
+    m_erosionThermalIterations: 80
+    m_erosionThermalReposeAngle: 80
+    m_erosionPrecipRate: 0.5
+    m_erosionEvaporationRate: 0.5
+    m_erosionFlowRate: 0.5
+    m_erosionSedimentCapacity: 0.5
+    m_erosionSedimentDepositRate: 0.8
+    m_erosionSedimentDissolveRate: 0.5
+    m_erosionRiverBankDepositRate: 7
+    m_erosionRiverBankDissolveRate: 5
+    m_erosionRiverBedDepositRate: 5
+    m_erosionRiverBedDissolveRate: 5
+    m_erosionShowAdvancedUI: 0
+    m_erosionShowThermalUI: 0
+    m_erosionShowWaterUI: 0
+    m_erosionShowSedimentUI: 0
+    m_erosionShowRiverBankUI: 0
+    m_smoothVerticality: 0
+    m_smoothBlurRadius: 1
+    m_curvatureBlurAmount: 0.001
+    m_curvatureWorldUnits: -1
+    m_curvatureIntensity: 0.7
+    m_textureMaskSpawnRuleGUID: 
+    m_concavity: 1
+    m_concavityFeatureSize: 10
+    m_foldedOut: 0
+    m_selectedWorldBiomeMaskGUID: 
+    m_growAndShrinkValue: 0
+    m_globalSpawnerMaskStackRT: {fileID: 0}
+  - m_active: 1
+    m_invert: 0
+    m_hasErrors: 0
+    m_influence: 0
+    m_operation: 10
+    m_blendMode: 1
+    m_imageMaskLocation: 1
+    m_strength: 1
+    m_seaLevel: 15
+    m_maxWorldHeight: 61.157185
+    m_minWorldHeight: 0
+    m_xOffSet: 0
+    m_zOffSet: 0
+    m_xOffSetScalar: 0
+    m_zOffSetScalar: 0
+    m_xScale: 1
+    m_zScale: 1
+    m_rotationDegrees: 0
+    m_tiling: 0
+    m_imageMaskSpace: 0
+    m_imageMaskTextureGUID: 
+    m_imageMaskFilterMode: 0
+    m_imageMaskColorSelectionColor: {r: 1, g: 1, b: 1, a: 1}
+    m_imageMaskColorSelectionAccuracy: 0.5
+    m_distanceMaskCurve:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 0
+        value: 1
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 1
+        value: 0
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+    m_strengthTransformCurve:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 0
+        value: 0
+        inSlope: 1
+        outSlope: 1
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 1
+        value: 1
+        inSlope: 1
+        outSlope: 1
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+    m_heightMaskCurve:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 0
+        value: 0
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 1
+        value: 1
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+    m_heightMaskType: 1
+    m_heightMaskUnit: 1
+    m_relativeHeightMin: 25
+    m_relativeHeightMax: 75
+    m_absoluteHeightMin: 50
+    m_absoluteHeightMax: 150
+    m_seaLevelRelativeHeightMin: -109876.55
+    m_seaLevelRelativeHeightMax: 109876.55
+    tree1active: 0
+    tree2active: 0
+    m_slopeMaskCurve:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 0
+        value: 0
+        inSlope: 1
+        outSlope: 1
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 1
+        value: 1
+        inSlope: 1
+        outSlope: 1
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+    m_slopeMin: 0
+    m_slopeMax: 0.1
+    m_distanceMaskAxes: 0
+    m_gaiaNoiseSettings:
+      m_translation: {x: 0, y: 0, z: 0}
+      m_rotation: {x: 0, y: 0, z: 0}
+      m_scale: {x: 10, y: 1, z: 10}
+      m_noiseTypeName: Perlin
+      m_noiseTypeParams: 
+      m_fractalTypeName: Fbm
+      m_fractalTypeParams: 
+      m_warpEnabled: 0
+      m_warpIterations: 0
+      m_warpStrength: 0
+      m_warpOffset: {x: 0, y: 0, z: 0, w: 0}
+    m_noiseSettings: {fileID: 0}
+    m_noiseToolSettings:
+      worldHeightRemap: {x: 0, y: 0}
+      coordSpace: 0
+      noiseAssetGUID: 
+    m_ShowNoiseTransformSettings: 0
+    m_ShowNoisePreviewTexture: 1
+    m_noisePreviewTextureLocked: 0
+    m_ShowNoiseTypeSettings: 0
+    m_scaleNoiseToTerrainSize: 0
+    m_distanceMaskSquareRoundness: 0.25
+    m_collisionMaskExpanded: 1
+    m_collisionMasks: []
+    m_allPolyMasks: []
+    m_selectedPolyMaskObject: {fileID: 0}
+    m_erosionMaskOutput: 0
+    m_erosionSimScale: 9
+    m_erosionHydroTimeDelta: 0.05
+    m_erosionHydroIterations: 15
+    m_erosionThermalTimeDelta: 0.01
+    m_erosionThermalIterations: 80
+    m_erosionThermalReposeAngle: 80
+    m_erosionPrecipRate: 0.5
+    m_erosionEvaporationRate: 0.5
+    m_erosionFlowRate: 0.5
+    m_erosionSedimentCapacity: 0.5
+    m_erosionSedimentDepositRate: 0.8
+    m_erosionSedimentDissolveRate: 0.5
+    m_erosionRiverBankDepositRate: 7
+    m_erosionRiverBankDissolveRate: 5
+    m_erosionRiverBedDepositRate: 5
+    m_erosionRiverBedDissolveRate: 5
+    m_erosionShowAdvancedUI: 0
+    m_erosionShowThermalUI: 0
+    m_erosionShowWaterUI: 0
+    m_erosionShowSedimentUI: 0
+    m_erosionShowRiverBankUI: 0
+    m_smoothVerticality: 0
+    m_smoothBlurRadius: 1
+    m_curvatureBlurAmount: 0.001
+    m_curvatureWorldUnits: -1
+    m_curvatureIntensity: 0.7
+    m_textureMaskSpawnRuleGUID: 
+    m_concavity: 1
+    m_concavityFeatureSize: 2.9
+    m_foldedOut: 0
+    m_selectedWorldBiomeMaskGUID: 
+    m_growAndShrinkValue: 0
+    m_globalSpawnerMaskStackRT: {fileID: 0}
+  - m_active: 1
+    m_invert: 0
+    m_hasErrors: 0
+    m_influence: 0
+    m_operation: 10
+    m_blendMode: 4
+    m_imageMaskLocation: 1
+    m_strength: 1
+    m_seaLevel: 15
+    m_maxWorldHeight: 61.157185
+    m_minWorldHeight: 0
+    m_xOffSet: 0
+    m_zOffSet: 0
+    m_xOffSetScalar: 0
+    m_zOffSetScalar: 0
+    m_xScale: 1
+    m_zScale: 1
+    m_rotationDegrees: 0
+    m_tiling: 0
+    m_imageMaskSpace: 0
+    m_imageMaskTextureGUID: 
+    m_imageMaskFilterMode: 0
+    m_imageMaskColorSelectionColor: {r: 1, g: 1, b: 1, a: 1}
+    m_imageMaskColorSelectionAccuracy: 0.5
+    m_distanceMaskCurve:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 0
+        value: 1
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 1
+        value: 0
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+    m_strengthTransformCurve:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 0
+        value: 0
+        inSlope: 1
+        outSlope: 1
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 1
+        value: 1
+        inSlope: 1
+        outSlope: 1
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+    m_heightMaskCurve:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 0
+        value: 0
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 1
+        value: 1
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+    m_heightMaskType: 1
+    m_heightMaskUnit: 1
+    m_relativeHeightMin: 25
+    m_relativeHeightMax: 75
+    m_absoluteHeightMin: 50
+    m_absoluteHeightMax: 150
+    m_seaLevelRelativeHeightMin: -109876.55
+    m_seaLevelRelativeHeightMax: 109876.55
+    tree1active: 0
+    tree2active: 0
+    m_slopeMaskCurve:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 0
+        value: 0
+        inSlope: 1
+        outSlope: 1
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 1
+        value: 1
+        inSlope: 1
+        outSlope: 1
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+    m_slopeMin: 0
+    m_slopeMax: 0.1
+    m_distanceMaskAxes: 0
+    m_gaiaNoiseSettings:
+      m_translation: {x: 0, y: 0, z: 0}
+      m_rotation: {x: 0, y: 0, z: 0}
+      m_scale: {x: 10, y: 1, z: 10}
+      m_noiseTypeName: Perlin
+      m_noiseTypeParams: 
+      m_fractalTypeName: Fbm
+      m_fractalTypeParams: 
+      m_warpEnabled: 0
+      m_warpIterations: 0
+      m_warpStrength: 0
+      m_warpOffset: {x: 0, y: 0, z: 0, w: 0}
+    m_noiseSettings: {fileID: 0}
+    m_noiseToolSettings:
+      worldHeightRemap: {x: 0, y: 0}
+      coordSpace: 0
+      noiseAssetGUID: 
+    m_ShowNoiseTransformSettings: 0
+    m_ShowNoisePreviewTexture: 1
+    m_noisePreviewTextureLocked: 0
+    m_ShowNoiseTypeSettings: 0
+    m_scaleNoiseToTerrainSize: 0
+    m_distanceMaskSquareRoundness: 0.25
+    m_collisionMaskExpanded: 1
+    m_collisionMasks: []
+    m_allPolyMasks: []
+    m_selectedPolyMaskObject: {fileID: 0}
+    m_erosionMaskOutput: 0
+    m_erosionSimScale: 9
+    m_erosionHydroTimeDelta: 0.05
+    m_erosionHydroIterations: 15
+    m_erosionThermalTimeDelta: 0.01
+    m_erosionThermalIterations: 80
+    m_erosionThermalReposeAngle: 80
+    m_erosionPrecipRate: 0.5
+    m_erosionEvaporationRate: 0.5
+    m_erosionFlowRate: 0.5
+    m_erosionSedimentCapacity: 0.5
+    m_erosionSedimentDepositRate: 0.8
+    m_erosionSedimentDissolveRate: 0.5
+    m_erosionRiverBankDepositRate: 7
+    m_erosionRiverBankDissolveRate: 5
+    m_erosionRiverBedDepositRate: 5
+    m_erosionRiverBedDissolveRate: 5
+    m_erosionShowAdvancedUI: 0
+    m_erosionShowThermalUI: 0
+    m_erosionShowWaterUI: 0
+    m_erosionShowSedimentUI: 0
+    m_erosionShowRiverBankUI: 0
+    m_smoothVerticality: 0
+    m_smoothBlurRadius: 1
+    m_curvatureBlurAmount: 0.001
+    m_curvatureWorldUnits: -1
+    m_curvatureIntensity: 0.7
+    m_textureMaskSpawnRuleGUID: 
+    m_concavity: -1
+    m_concavityFeatureSize: 2.5
+    m_foldedOut: 0
+    m_selectedWorldBiomeMaskGUID: 
+    m_growAndShrinkValue: 0
+    m_globalSpawnerMaskStackRT: {fileID: 0}
+  - m_active: 1
+    m_invert: 0
+    m_hasErrors: 0
+    m_influence: 0
+    m_operation: 2
+    m_blendMode: 0
+    m_imageMaskLocation: 1
+    m_strength: 1
+    m_seaLevel: 15
+    m_maxWorldHeight: 61.157185
+    m_minWorldHeight: 0
+    m_xOffSet: 0
+    m_zOffSet: 0
+    m_xOffSetScalar: 0
+    m_zOffSetScalar: 0
+    m_xScale: 1
+    m_zScale: 1
+    m_rotationDegrees: 0
+    m_tiling: 0
+    m_imageMaskSpace: 0
+    m_imageMaskTextureGUID: 
+    m_imageMaskFilterMode: 0
+    m_imageMaskColorSelectionColor: {r: 1, g: 1, b: 1, a: 1}
+    m_imageMaskColorSelectionAccuracy: 0.5
+    m_distanceMaskCurve:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 0
+        value: 1
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 1
+        value: 0
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+    m_strengthTransformCurve:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 0
+        value: 0
+        inSlope: 1
+        outSlope: 1
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 1
+        value: 1
+        inSlope: 1
+        outSlope: 1
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+    m_heightMaskCurve:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 0
+        value: 0
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 0.069453746
+        value: 0.995101
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0.33333334
+        outWeight: 0.33333334
+      - serializedVersion: 3
+        time: 0.88955206
+        value: 1.0015876
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0.036676925
+        outWeight: 0.33333334
+      - serializedVersion: 3
+        time: 1
+        value: 0.004219413
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+    m_heightMaskType: 1
+    m_heightMaskUnit: 1
+    m_relativeHeightMin: 5.56
+    m_relativeHeightMax: 69.54
+    m_absoluteHeightMin: 30.748531
+    m_absoluteHeightMax: 94.72853
+    m_seaLevelRelativeHeightMin: -109876.55
+    m_seaLevelRelativeHeightMax: 109876.55
+    tree1active: 0
+    tree2active: 0
+    m_slopeMaskCurve:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 0
+        value: 1
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 1
+        value: 0
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+    m_slopeMin: 0
+    m_slopeMax: 0.1
+    m_distanceMaskAxes: 0
+    m_gaiaNoiseSettings:
+      m_translation: {x: 0, y: 0, z: 0}
+      m_rotation: {x: 0, y: 0, z: 0}
+      m_scale: {x: 10, y: 1, z: 10}
+      m_noiseTypeName: Perlin
+      m_noiseTypeParams: 
+      m_fractalTypeName: Fbm
+      m_fractalTypeParams: 
+      m_warpEnabled: 0
+      m_warpIterations: 0
+      m_warpStrength: 0
+      m_warpOffset: {x: 0, y: 0, z: 0, w: 0}
+    m_noiseSettings: {fileID: 0}
+    m_noiseToolSettings:
+      worldHeightRemap: {x: 0, y: 0}
+      coordSpace: 0
+      noiseAssetGUID: 
+    m_ShowNoiseTransformSettings: 0
+    m_ShowNoisePreviewTexture: 1
+    m_noisePreviewTextureLocked: 0
+    m_ShowNoiseTypeSettings: 0
+    m_scaleNoiseToTerrainSize: 0
+    m_distanceMaskSquareRoundness: 0.25
+    m_collisionMaskExpanded: 1
+    m_collisionMasks: []
+    m_allPolyMasks: []
+    m_selectedPolyMaskObject: {fileID: 0}
+    m_erosionMaskOutput: 0
+    m_erosionSimScale: 9
+    m_erosionHydroTimeDelta: 0.05
+    m_erosionHydroIterations: 15
+    m_erosionThermalTimeDelta: 0.01
+    m_erosionThermalIterations: 80
+    m_erosionThermalReposeAngle: 80
+    m_erosionPrecipRate: 0.5
+    m_erosionEvaporationRate: 0.5
+    m_erosionFlowRate: 0.5
+    m_erosionSedimentCapacity: 0.5
+    m_erosionSedimentDepositRate: 0.8
+    m_erosionSedimentDissolveRate: 0.5
+    m_erosionRiverBankDepositRate: 7
+    m_erosionRiverBankDissolveRate: 5
+    m_erosionRiverBedDepositRate: 5
+    m_erosionRiverBedDissolveRate: 5
+    m_erosionShowAdvancedUI: 0
+    m_erosionShowThermalUI: 0
+    m_erosionShowWaterUI: 0
+    m_erosionShowSedimentUI: 0
+    m_erosionShowRiverBankUI: 0
+    m_smoothVerticality: 0
+    m_smoothBlurRadius: 1
+    m_curvatureBlurAmount: 0.001
+    m_curvatureWorldUnits: -1
+    m_curvatureIntensity: 0.7
+    m_textureMaskSpawnRuleGUID: 
+    m_concavity: 1
+    m_concavityFeatureSize: 10
+    m_foldedOut: 0
+    m_selectedWorldBiomeMaskGUID: 
+    m_growAndShrinkValue: 0
+    m_globalSpawnerMaskStackRT: {fileID: 0}
   m_collisionMaskListBeingDrawn: []
-  m_spawnRuleIndexBeingDrawn: 7
-  m_spawnRuleMaskIndexBeingDrawn: 0
+  m_spawnRuleIndexBeingDrawn: 8
+  m_spawnRuleMaskIndexBeingDrawn: 3
   m_textureResourcePrototypeBeingDrawn:
     m_name: 
     m_texture: {fileID: 0}
@@ -1480,13 +2280,14 @@ MonoBehaviour:
     m_channelRemapFoldedOut: 0
     m_currentLayer: {fileID: 0}
   m_treeResourcePrototypeBeingDrawn:
-    m_name: 
-    m_desktopPrefab: {fileID: 0}
+    m_name: PW_Tree_Spruce_01
+    m_desktopPrefab: {fileID: 7025381963333907101, guid: 471788783c85bbf4281010ba8d944acf,
+      type: 3}
     m_desktopPrefabFileName: 
     m_mobilePrefabFileName: 
-    m_bendFactor: 0
-    m_navMeshLOD: 0
-    m_customNavMeshLOD: 0
+    m_bendFactor: 37.3
+    m_navMeshLOD: 2
+    m_customNavMeshLOD: 2
     m_healthyColour: {r: 1, g: 1, b: 1, a: 1}
     m_dryColour: {r: 1, g: 1, b: 1, a: 1}
     m_snapToTerrain: 1
@@ -1494,20 +2295,20 @@ MonoBehaviour:
     m_minYOffset: -2
     m_maxYOffset: 2
     m_yOffsetBasedOn: 0
-    m_spawnScale: 1
-    m_minWidth: 0.75
+    m_spawnScale: 3
+    m_minWidth: 0.7
     m_maxWidth: 1.5
-    m_minHeight: 0.75
+    m_minHeight: 0.7
     m_maxHeight: 1.5
-    m_widthRandomPercentage: 0.5
-    m_heightRandomPercentage: 0.5
-    m_lastUsedSpawnScale: 1
-    m_lastUsedMinWidth: 0.75
+    m_widthRandomPercentage: 0.253
+    m_heightRandomPercentage: 0.253
+    m_lastUsedSpawnScale: 3
+    m_lastUsedMinWidth: 0.7
     m_lastUsedMaxWidth: 1.5
-    m_lastUsedMinHeight: 0.75
+    m_lastUsedMinHeight: 0.7
     m_lastUsedMaxHeight: 1.5
-    m_lastUsedWidthRandomPercentage: 0.5
-    m_lastUsedHeightRandomPercentage: 0.5
+    m_lastUsedWidthRandomPercentage: 0.253
+    m_lastUsedHeightRandomPercentage: 0.253
     m_spawnCriteria: []
     m_spawnExtensions: []
     m_instancesFoldOut: 0
@@ -1543,7 +2344,7 @@ MonoBehaviour:
     m_spawnExtensions: []
     m_dnaFoldedOut: 0
   m_gameObjectResourcePrototypeBeingDrawn:
-    m_name: 
+    m_name: New Game Object 1
     m_instances: []
     m_dna:
       m_boundsRadius: 1
@@ -1941,16 +2742,16 @@ MonoBehaviour:
   m_loadingBoundsRegular:
     m_Center:
       x: 0
-      y: 0
+      y: 30.579986572265625
       z: 0
     m_Extents:
-      x: 301.75
-      y: 301.75
-      z: 301.75
+      x: 255.75
+      y: 255.75
+      z: 255.75
   m_loadingBoundsImpostor:
     m_Center:
       x: 0
-      y: 0
+      y: 30.579986572265625
       z: 0
     m_Extents:
       x: 0
@@ -1982,6 +2783,30 @@ MonoBehaviour:
   m_impostorLoadRangeActiveColor: {r: 0, g: 1, b: 0, a: 1}
   m_regularLoadRangeInActiveColor: {r: 0, g: 0, b: 0, a: 1}
   m_impostorLoadRangeInActiveColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+--- !u!114 &117272580
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cba17d399ab86974c8ef9551f6e8f8d4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  transformSettings:
+    translation: {x: 1389.8464, y: 146.64413, z: 1237.2158}
+    scale: {x: 5.1686354, y: 1, z: 5.1686354}
+    rotation: {x: 0, y: 0, z: 0}
+    flipScaleX: 0
+    flipScaleY: 0
+    flipScaleZ: 0
+  domainSettings:
+    noiseTypeName: Perlin
+    fractalTypeName: Fbm
+    noiseTypeParams: 
+    fractalTypeParams: '{"warpOffsets":{"x":-23.62227439880371,"y":-740.6602172851563,"z":295.54010009765627,"w":0.0},"octavesMinMax":{"x":0.0,"y":16.0},"amplitudeMinMax":{"x":0.0,"y":1.0},"frequencyMinMax":{"x":0.0,"y":2.0},"lacunarityMinMax":{"x":0.0,"y":4.0},"persistenceMinMax":{"x":0.0,"y":1.0},"warpIterationsMinMax":{"x":0.0,"y":8.0},"warpStrengthMinMax":{"x":-2.0,"y":2.0},"octaves":8.0,"amplitude":0.5978570580482483,"frequency":1.0,"persistence":0.5,"lacunarity":1.2288411855697632,"warpIterations":0.12008093297481537,"warpStrength":0.4457036256790161,"warpEnabled":true,"warpExpanded":true}'
 --- !u!1 &119196080
 GameObject:
   m_ObjectHideFlags: 0
@@ -2106,7 +2931,7 @@ MonoBehaviour:
   m_spawnRuleStampsToggleAllState: 1
   m_drawPreview: 0
   m_previewRuleIds: 
-  m_maxWorldHeight: 60.90718
+  m_maxWorldHeight: 61.157185
   m_minWorldHeight: 0
   m_showSeaLevelinStampPreview: 1
   m_terrainGeneratorPanelUnfolded: 1
@@ -2880,7 +3705,7 @@ MonoBehaviour:
   m_spawnRuleStampsToggleAllState: 1
   m_drawPreview: 0
   m_previewRuleIds: 
-  m_maxWorldHeight: 26.499445
+  m_maxWorldHeight: 0
   m_minWorldHeight: 0
   m_showSeaLevelinStampPreview: 1
   m_terrainGeneratorPanelUnfolded: 1
@@ -4195,6 +5020,18 @@ Material:
     - _SkyTint: {r: 0, g: 0, b: 0, a: 1}
     - _Tint: {r: 0.5943396, g: 0.5943396, b: 0.5943396, a: 0.5}
   m_BuildTextureStacks: []
+--- !u!134 &191649834
+PhysicMaterial:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: 
+  dynamicFriction: 0.6
+  staticFriction: 0.6
+  bounciness: 0
+  frictionCombine: 0
+  bounceCombine: 0
 --- !u!1 &193531840
 GameObject:
   m_ObjectHideFlags: 0
@@ -7659,6 +8496,18 @@ MonoBehaviour:
   m_stampJitter: 0.25
   m_stampWidth: 100
   m_stampHeight: 100
+--- !u!134 &402935775
+PhysicMaterial:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: ' (Instance)'
+  dynamicFriction: 0.6
+  staticFriction: 0.6
+  bounciness: 0
+  frictionCombine: 0
+  bounceCombine: 0
 --- !u!1 &410087039
 GameObject:
   m_ObjectHideFlags: 0
@@ -7906,12 +8755,12 @@ MonoBehaviour:
   m_showSeaLevelPlane: 0
   m_showRulers: 0
   m_syncHeightmaps: 1
-  m_stampDirty: 0
+  m_stampDirty: 1
   m_recordUndo: 0
   m_currentStamperUndoOperation: 0
   m_stamperUndoOperations: []
   m_linkedBiomeController: {fileID: 0}
-  m_cachedRenderTexture: {fileID: 718282545}
+  m_cachedRenderTexture: {fileID: 0}
   m_cachedMaskTexture: {fileID: 1732014598}
   m_drawPreview: 1
   m_showSeaLevelinStampPreview: 1
@@ -8719,18 +9568,6 @@ MonoBehaviour:
     fractalTypeName: Fbm
     noiseTypeParams: 
     fractalTypeParams: '{"warpOffsets":{"x":2.5,"y":1.399999976158142,"z":3.200000047683716,"w":2.700000047683716},"octavesMinMax":{"x":0.0,"y":16.0},"amplitudeMinMax":{"x":0.0,"y":1.0},"frequencyMinMax":{"x":0.0,"y":2.0},"lacunarityMinMax":{"x":0.0,"y":4.0},"persistenceMinMax":{"x":0.0,"y":1.0},"warpIterationsMinMax":{"x":0.0,"y":8.0},"warpStrengthMinMax":{"x":-2.0,"y":2.0},"octaves":8.0,"amplitude":0.48899999260902407,"frequency":0.7059999704360962,"persistence":0.5249999761581421,"lacunarity":1.5,"warpIterations":1.0,"warpStrength":0.5,"warpEnabled":false,"warpExpanded":true}'
---- !u!134 &562309902
-PhysicMaterial:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_Name: 
-  dynamicFriction: 0.6
-  staticFriction: 0.6
-  bounciness: 0
-  frictionCombine: 0
-  bounceCombine: 0
 --- !u!1 &567866449
 GameObject:
   m_ObjectHideFlags: 0
@@ -9157,7 +9994,7 @@ MonoBehaviour:
   m_spawnRuleStampsToggleAllState: 1
   m_drawPreview: 0
   m_previewRuleIds: 
-  m_maxWorldHeight: 60.90718
+  m_maxWorldHeight: 61.157185
   m_minWorldHeight: 0
   m_showSeaLevelinStampPreview: 1
   m_terrainGeneratorPanelUnfolded: 1
@@ -9830,7 +10667,7 @@ MonoBehaviour:
   turnSpeed: 12
   doubleTapWindow: 0.3
   maxStamina: 100
-  flightDrainPerSecond: 24
+  flightDrainPerSecond: 20
   groundedRecoveryPerSecond: 18
   flightRestartStamina: 15
   exhaustionStunSeconds: 1
@@ -9845,7 +10682,7 @@ SphereCollider:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 638789976}
-  m_Material: {fileID: 1892452484}
+  m_Material: {fileID: 402935775}
   m_IncludeLayers:
     serializedVersion: 2
     m_Bits: 0
@@ -9951,18 +10788,6 @@ Rigidbody:
   m_Interpolate: 1
   m_Constraints: 112
   m_CollisionDetection: 1
---- !u!134 &639439910
-PhysicMaterial:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_Name: 
-  dynamicFriction: 0.6
-  staticFriction: 0.6
-  bounciness: 0
-  frictionCombine: 0
-  bounceCombine: 0
 --- !u!1 &655566991
 GameObject:
   m_ObjectHideFlags: 0
@@ -10557,7 +11382,7 @@ MonoBehaviour:
   m_z: 0
   m_isFoldedOut: 0
   m_width: 100
-  m_height: 4.7
+  m_height: 5
   m_blendStrength: 0.5
   m_absoluteHeightValue: 0
   m_rotation: 0
@@ -10826,8 +11651,8 @@ MonoBehaviour:
     m_blendMode: 0
     m_imageMaskLocation: 0
     m_strength: 1
-    m_seaLevel: 12.5
-    m_maxWorldHeight: 26.499445
+    m_seaLevel: 0
+    m_maxWorldHeight: 0
     m_minWorldHeight: 0
     m_xOffSet: 0
     m_zOffSet: 0
@@ -10837,7 +11662,7 @@ MonoBehaviour:
     m_zScale: 1
     m_rotationDegrees: 0
     m_tiling: 0
-    m_imageMaskSpace: 1
+    m_imageMaskSpace: 0
     m_imageMaskTextureGUID: 
     m_imageMaskFilterMode: 0
     m_imageMaskColorSelectionColor: {r: 1, g: 1, b: 1, a: 1}
@@ -10981,7 +11806,7 @@ MonoBehaviour:
       m_warpIterations: 0.12008093
       m_warpStrength: 0.44570363
       m_warpOffset: {x: -23.622274, y: -740.6602, z: 295.5401, w: 0}
-    m_noiseSettings: {fileID: 1955037481}
+    m_noiseSettings: {fileID: 117272580}
     m_noiseToolSettings:
       worldHeightRemap: {x: 0, y: 0}
       coordSpace: 0
@@ -11038,8 +11863,8 @@ MonoBehaviour:
     m_blendMode: 0
     m_imageMaskLocation: 0
     m_strength: 1
-    m_seaLevel: 12.5
-    m_maxWorldHeight: 26.499445
+    m_seaLevel: 0
+    m_maxWorldHeight: 0
     m_minWorldHeight: 0
     m_xOffSet: 0
     m_zOffSet: 0
@@ -12372,44 +13197,18 @@ MonoBehaviour:
   m_impostorLoadRangeActiveColor: {r: 0, g: 1, b: 0, a: 1}
   m_regularLoadRangeInActiveColor: {r: 0, g: 0, b: 0, a: 1}
   m_impostorLoadRangeInActiveColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
---- !u!84 &718282545
-RenderTexture:
+--- !u!134 &715176210
+PhysicMaterial:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: Stamper Cached Render Texture
-  m_ImageContentsHash:
-    serializedVersion: 2
-    Hash: 00000000000000000000000000000000
-  m_ForcedFallbackFormat: 4
-  m_DownscaleFallback: 0
-  m_IsAlphaChannelOptional: 0
-  serializedVersion: 5
-  m_Width: 1025
-  m_Height: 1025
-  m_AntiAliasing: 1
-  m_MipCount: -1
-  m_DepthStencilFormat: 0
-  m_ColorFormat: 49
-  m_MipMap: 0
-  m_GenerateMips: 1
-  m_SRGB: 0
-  m_UseDynamicScale: 0
-  m_BindMS: 0
-  m_EnableCompatibleFormat: 1
-  m_EnableRandomWrite: 1
-  m_TextureSettings:
-    serializedVersion: 2
-    m_FilterMode: 0
-    m_Aniso: 1
-    m_MipBias: 0
-    m_WrapU: 1
-    m_WrapV: 1
-    m_WrapW: 1
-  m_Dimension: 2
-  m_VolumeDepth: 1
-  m_ShadowSamplingMode: 2
+  m_Name: ' (Instance)'
+  dynamicFriction: 0.6
+  staticFriction: 0.6
+  bounciness: 0
+  frictionCombine: 0
+  bounceCombine: 0
 --- !u!114 &724052458
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -12640,7 +13439,7 @@ MonoBehaviour:
       m_imageMaskLocation: 1
       m_strength: 1
       m_seaLevel: 15
-      m_maxWorldHeight: 60.90718
+      m_maxWorldHeight: 61.157185
       m_minWorldHeight: 0
       m_xOffSet: 0
       m_zOffSet: 0
@@ -12852,7 +13651,7 @@ MonoBehaviour:
       m_imageMaskLocation: 1
       m_strength: 1
       m_seaLevel: 15
-      m_maxWorldHeight: 60.90718
+      m_maxWorldHeight: 61.157185
       m_minWorldHeight: 0
       m_xOffSet: 0
       m_zOffSet: 0
@@ -13118,7 +13917,7 @@ MonoBehaviour:
       m_imageMaskLocation: 1
       m_strength: 1
       m_seaLevel: 15
-      m_maxWorldHeight: 60.90718
+      m_maxWorldHeight: 61.157185
       m_minWorldHeight: 0
       m_xOffSet: 0
       m_zOffSet: 0
@@ -13330,7 +14129,7 @@ MonoBehaviour:
       m_imageMaskLocation: 1
       m_strength: 1
       m_seaLevel: 15
-      m_maxWorldHeight: 60.90718
+      m_maxWorldHeight: 61.157185
       m_minWorldHeight: 0
       m_xOffSet: 0
       m_zOffSet: 0
@@ -13596,7 +14395,7 @@ MonoBehaviour:
       m_imageMaskLocation: 1
       m_strength: 1
       m_seaLevel: 15
-      m_maxWorldHeight: 60.90718
+      m_maxWorldHeight: 61.157185
       m_minWorldHeight: 0
       m_xOffSet: 0
       m_zOffSet: 0
@@ -13808,7 +14607,7 @@ MonoBehaviour:
       m_imageMaskLocation: 1
       m_strength: 1
       m_seaLevel: 15
-      m_maxWorldHeight: 60.90718
+      m_maxWorldHeight: 61.157185
       m_minWorldHeight: 0
       m_xOffSet: 0
       m_zOffSet: 0
@@ -14074,7 +14873,7 @@ MonoBehaviour:
       m_imageMaskLocation: 1
       m_strength: 1
       m_seaLevel: 15
-      m_maxWorldHeight: 60.90718
+      m_maxWorldHeight: 61.157185
       m_minWorldHeight: 0
       m_xOffSet: 0
       m_zOffSet: 0
@@ -14340,7 +15139,7 @@ MonoBehaviour:
       m_imageMaskLocation: 1
       m_strength: 1
       m_seaLevel: 15
-      m_maxWorldHeight: 60.90718
+      m_maxWorldHeight: 61.157185
       m_minWorldHeight: 0
       m_xOffSet: 0
       m_zOffSet: 0
@@ -14594,7 +15393,7 @@ MonoBehaviour:
     m_imageMaskLocation: 0
     m_strength: 1
     m_seaLevel: 15
-    m_maxWorldHeight: 60.90718
+    m_maxWorldHeight: 61.157185
     m_minWorldHeight: 0
     m_xOffSet: 0
     m_zOffSet: 0
@@ -14788,7 +15587,7 @@ MonoBehaviour:
     m_imageMaskLocation: 0
     m_strength: 1
     m_seaLevel: 15
-    m_maxWorldHeight: 60.90718
+    m_maxWorldHeight: 61.157185
     m_minWorldHeight: 0
     m_xOffSet: 0
     m_zOffSet: 0
@@ -15503,7 +16302,7 @@ MonoBehaviour:
   m_createdFromGaiaManager: 0
   m_showSeaLevelPlane: 0
   m_showBoundingBox: 1
-  m_seaLevel: 12.5
+  m_seaLevel: 15
   m_worldDesignerPreviewTileX: -99
   m_worldDesignerPreviewTileZ: -99
   m_worldDesignerClearStampsWarningShown: 0
@@ -19121,7 +19920,7 @@ BoxCollider:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1057392604}
-  m_Material: {fileID: 639439910}
+  m_Material: {fileID: 715176210}
   m_IncludeLayers:
     serializedVersion: 2
     m_Bits: 0
@@ -19295,7 +20094,7 @@ TerrainCollider:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1145317222}
-  m_Material: {fileID: 0}
+  m_Material: {fileID: 1398794834}
   m_IncludeLayers:
     serializedVersion: 2
     m_Bits: 0
@@ -21307,7 +22106,7 @@ MonoBehaviour:
   m_underwaterPostFX: {fileID: 1512715414}
   m_editCausticTextures: 0
   m_useCaustics: 1
-  m_mainLight: {fileID: 0}
+  m_mainLight: {fileID: 1440251799}
   m_framesPerSecond: 24
   m_causticSize: 10
   m_causticTextures:
@@ -21552,6 +22351,18 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 1024, y: 40}
   m_Pivot: {x: 0, y: 0}
+--- !u!134 &1213158065
+PhysicMaterial:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: 
+  dynamicFriction: 0.6
+  staticFriction: 0.6
+  bounciness: 0
+  frictionCombine: 0
+  bounceCombine: 0
 --- !u!1 &1227843198
 GameObject:
   m_ObjectHideFlags: 0
@@ -21593,7 +22404,7 @@ BoxCollider:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1227843198}
-  m_Material: {fileID: 0}
+  m_Material: {fileID: 191649834}
   m_IncludeLayers:
     serializedVersion: 2
     m_Bits: 0
@@ -23420,7 +24231,7 @@ MonoBehaviour:
       m_blendMode: 0
       m_imageMaskLocation: 0
       m_strength: 1
-      m_seaLevel: 12.5
+      m_seaLevel: 15
       m_maxWorldHeight: 61.157185
       m_minWorldHeight: 0
       m_xOffSet: 0
@@ -23677,7 +24488,7 @@ MonoBehaviour:
       m_blendMode: 0
       m_imageMaskLocation: 0
       m_strength: 1
-      m_seaLevel: 12.5
+      m_seaLevel: 15
       m_maxWorldHeight: 61.157185
       m_minWorldHeight: 0
       m_xOffSet: 0
@@ -23934,7 +24745,7 @@ MonoBehaviour:
       m_blendMode: 0
       m_imageMaskLocation: 0
       m_strength: 1
-      m_seaLevel: 12.5
+      m_seaLevel: 15
       m_maxWorldHeight: 61.157185
       m_minWorldHeight: 0
       m_xOffSet: 0
@@ -24191,7 +25002,7 @@ MonoBehaviour:
       m_blendMode: 0
       m_imageMaskLocation: 0
       m_strength: 1
-      m_seaLevel: 12.5
+      m_seaLevel: 15
       m_maxWorldHeight: 61.157185
       m_minWorldHeight: 0
       m_xOffSet: 0
@@ -24472,7 +25283,7 @@ BoxCollider:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1244449269}
-  m_Material: {fileID: 0}
+  m_Material: {fileID: 1941621363}
   m_IncludeLayers:
     serializedVersion: 2
     m_Bits: 0
@@ -24684,6 +25495,71 @@ MonoBehaviour:
       m_lastUsedMaxHeight: 2
       m_lastUsedWidthRandomPercentage: 0.2
       m_lastUsedHeightRandomPercentage: 0.2
+      m_spawnCriteria: []
+      m_spawnExtensions: []
+      m_instancesFoldOut: 0
+      m_dnaFoldedOut: 0
+    - m_name: PW_Tree_Spruce_01
+      m_desktopPrefab: {fileID: 7025381963333907101, guid: 471788783c85bbf4281010ba8d944acf,
+        type: 3}
+      m_desktopPrefabFileName: 
+      m_mobilePrefabFileName: 
+      m_bendFactor: 37.3
+      m_navMeshLOD: 2
+      m_customNavMeshLOD: 2
+      m_healthyColour: {r: 1, g: 1, b: 1, a: 1}
+      m_dryColour: {r: 1, g: 1, b: 1, a: 1}
+      m_snapToTerrain: 1
+      m_customOffset: 0
+      m_minYOffset: -2
+      m_maxYOffset: 2
+      m_yOffsetBasedOn: 0
+      m_spawnScale: 3
+      m_minWidth: 0.7
+      m_maxWidth: 1.5
+      m_minHeight: 0.7
+      m_maxHeight: 1.5
+      m_widthRandomPercentage: 0.253
+      m_heightRandomPercentage: 0.253
+      m_lastUsedSpawnScale: 3
+      m_lastUsedMinWidth: 0.7
+      m_lastUsedMaxWidth: 1.5
+      m_lastUsedMinHeight: 0.7
+      m_lastUsedMaxHeight: 1.5
+      m_lastUsedWidthRandomPercentage: 0.253
+      m_lastUsedHeightRandomPercentage: 0.253
+      m_spawnCriteria: []
+      m_spawnExtensions: []
+      m_instancesFoldOut: 0
+      m_dnaFoldedOut: 0
+    - m_name: New Tree 2
+      m_desktopPrefab: {fileID: 0}
+      m_desktopPrefabFileName: 
+      m_mobilePrefabFileName: 
+      m_bendFactor: 0
+      m_navMeshLOD: 0
+      m_customNavMeshLOD: 0
+      m_healthyColour: {r: 1, g: 1, b: 1, a: 1}
+      m_dryColour: {r: 1, g: 1, b: 1, a: 1}
+      m_snapToTerrain: 1
+      m_customOffset: 0
+      m_minYOffset: -2
+      m_maxYOffset: 2
+      m_yOffsetBasedOn: 0
+      m_spawnScale: 1
+      m_minWidth: 0.75
+      m_maxWidth: 1.5
+      m_minHeight: 0.75
+      m_maxHeight: 1.5
+      m_widthRandomPercentage: 0.5
+      m_heightRandomPercentage: 0.5
+      m_lastUsedSpawnScale: 1
+      m_lastUsedMinWidth: 0.75
+      m_lastUsedMaxWidth: 1.5
+      m_lastUsedMinHeight: 0.75
+      m_lastUsedMaxHeight: 1.5
+      m_lastUsedWidthRandomPercentage: 0.5
+      m_lastUsedHeightRandomPercentage: 0.5
       m_spawnCriteria: []
       m_spawnExtensions: []
       m_instancesFoldOut: 0
@@ -24977,6 +25853,18 @@ MonoBehaviour:
       m_canSpawnAsTree: 0
       m_instancesFoldOut: 1
       m_dnaFoldedOut: 1
+    - m_name: New Game Object 1
+      m_instances: []
+      m_dna:
+        m_boundsRadius: 1
+        m_scaleMultiplier: 1
+        m_extParam: 
+        m_protoIdx: 0
+      m_spawnCriteria: []
+      m_spawnExtensions: []
+      m_canSpawnAsTree: 0
+      m_instancesFoldOut: 0
+      m_dnaFoldedOut: 0
     m_spawnExtensionPrototypes: []
     m_stampDistributionPrototypes: []
     m_worldBiomeMaskPrototypes: []
@@ -24989,9 +25877,9 @@ MonoBehaviour:
   m_height: 10
   m_rotation: 0
   m_isWorldmapSpawner: 0
-  m_spawnRange: 302
+  m_spawnRange: 256
   m_generateRandomSeed: 1
-  m_randomSeed: 1305571312
+  m_randomSeed: 1726170847
   m_spawnDensity: 1
   m_resourcesPath: 
   m_spawnerRules:
@@ -25834,12 +26722,12 @@ MonoBehaviour:
     m_noiseZoom: 50
     m_noiseStrength: 1
     m_noiseInvert: 0
-    m_isActive: 1
+    m_isActive: 0
     m_isFoldedOut: 0
     m_currInstanceCnt: 0
     m_activeInstanceCnt: 0
     m_inactiveInstanceCnt: 0
-    m_resourceSettingsFoldedOut: 0
+    m_resourceSettingsFoldedOut: 1
     m_isHelpActive: 0
     m_spawnedInstances: 0
     m_goSpawnTargetMode: 0
@@ -26524,7 +27412,7 @@ MonoBehaviour:
     m_noiseZoom: 50
     m_noiseStrength: 1
     m_noiseInvert: 0
-    m_isActive: 1
+    m_isActive: 0
     m_isFoldedOut: 0
     m_currInstanceCnt: 0
     m_activeInstanceCnt: 0
@@ -27002,7 +27890,7 @@ MonoBehaviour:
     m_noiseZoom: 50
     m_noiseStrength: 1
     m_noiseInvert: 0
-    m_isActive: 1
+    m_isActive: 0
     m_isFoldedOut: 0
     m_currInstanceCnt: 0
     m_activeInstanceCnt: 0
@@ -27480,7 +28368,7 @@ MonoBehaviour:
     m_noiseZoom: 50
     m_noiseStrength: 1
     m_noiseInvert: 0
-    m_isActive: 1
+    m_isActive: 0
     m_isFoldedOut: 0
     m_currInstanceCnt: 0
     m_activeInstanceCnt: 0
@@ -27940,7 +28828,7 @@ MonoBehaviour:
     m_noiseZoom: 50
     m_noiseStrength: 1
     m_noiseInvert: 0
-    m_isActive: 1
+    m_isActive: 0
     m_isFoldedOut: 0
     m_currInstanceCnt: 0
     m_activeInstanceCnt: 0
@@ -28382,7 +29270,7 @@ MonoBehaviour:
     m_noiseZoom: 50
     m_noiseStrength: 1
     m_noiseInvert: 0
-    m_isActive: 1
+    m_isActive: 0
     m_isFoldedOut: 0
     m_currInstanceCnt: 0
     m_activeInstanceCnt: 0
@@ -28842,7 +29730,7 @@ MonoBehaviour:
     m_noiseZoom: 50
     m_noiseStrength: 1
     m_noiseInvert: 0
-    m_isActive: 1
+    m_isActive: 0
     m_isFoldedOut: 0
     m_currInstanceCnt: 0
     m_activeInstanceCnt: 0
@@ -29302,7 +30190,7 @@ MonoBehaviour:
     m_noiseZoom: 50
     m_noiseStrength: 1
     m_noiseInvert: 0
-    m_isActive: 1
+    m_isActive: 0
     m_isFoldedOut: 0
     m_currInstanceCnt: 0
     m_activeInstanceCnt: 0
@@ -29310,6 +30198,872 @@ MonoBehaviour:
     m_resourceSettingsFoldedOut: 0
     m_isHelpActive: 0
     m_spawnedInstances: 0
+    m_goSpawnTargetMode: 0
+    m_goSpawnTarget: {fileID: 0}
+    m_terrainGOSpawnTargetName: Gaia Game Object Spawns
+    m_terrainDetailDensity: 15
+    m_terrainDetailMinFitness: 0.5
+    m_terrainDetailFitnessBeginFadeOut: 0.6
+    m_createdBiomeController: {fileID: 0}
+    m_visibleInSceneHierarchy: 1
+    m_usesBoxStandIn: 0
+    m_boundsCollisionCheck: 0
+    m_changesHeightmap: 0
+    m_startOffsetX: 0
+    m_startOffsetZ: 0
+    m_collisionLayersToClear:
+      serializedVersion: 2
+      m_Bits: 0
+    m_RP_BuiltIn: 1
+    m_RP_URP: 1
+    m_RP_HDRP: 1
+  - m_name: PW_Tree_Spruce_01
+    m_guid: 3b461fa4-ded3-4e07-8eef-018d963ed333
+    m_useExtendedSpawn: 0
+    m_minRequiredFitness: 0.355
+    m_minInstanceRequiredFitness: 0
+    m_failureRate: 0
+    m_maxInstances: 40000000
+    m_ignoreMaxInstances: 0
+    m_minDirection: 0
+    m_maxDirection: 359.9
+    m_locationIncrementMin: 3
+    m_locationIncrementMax: 45
+    m_jitterPercent: 0.884
+    m_boundsCheckQuality: 25
+    m_resourceType: 2
+    m_resourceIdx: 4
+    m_imageMasks:
+    - m_active: 1
+      m_invert: 0
+      m_hasErrors: 0
+      m_influence: 0
+      m_operation: 4
+      m_blendMode: 0
+      m_imageMaskLocation: 1
+      m_strength: 1
+      m_seaLevel: 15
+      m_maxWorldHeight: 61.157185
+      m_minWorldHeight: 0
+      m_xOffSet: 0
+      m_zOffSet: 0
+      m_xOffSetScalar: 0
+      m_zOffSetScalar: 0
+      m_xScale: 1
+      m_zScale: 1
+      m_rotationDegrees: 0
+      m_tiling: 0
+      m_imageMaskSpace: 0
+      m_imageMaskTextureGUID: 
+      m_imageMaskFilterMode: 0
+      m_imageMaskColorSelectionColor: {r: 1, g: 1, b: 1, a: 1}
+      m_imageMaskColorSelectionAccuracy: 0.5
+      m_distanceMaskCurve:
+        serializedVersion: 2
+        m_Curve:
+        - serializedVersion: 3
+          time: 0
+          value: 1
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+          weightedMode: 0
+          inWeight: 0
+          outWeight: 0
+        - serializedVersion: 3
+          time: 1
+          value: 0
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+          weightedMode: 0
+          inWeight: 0
+          outWeight: 0
+        m_PreInfinity: 2
+        m_PostInfinity: 2
+        m_RotationOrder: 4
+      m_strengthTransformCurve:
+        serializedVersion: 2
+        m_Curve:
+        - serializedVersion: 3
+          time: 0
+          value: 0
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+          weightedMode: 0
+          inWeight: 0
+          outWeight: 0
+        - serializedVersion: 3
+          time: 0.3
+          value: 0
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+          weightedMode: 0
+          inWeight: 0
+          outWeight: 0.3333333
+        - serializedVersion: 3
+          time: 0.65753144
+          value: 0.9911301
+          inSlope: 0.04495597
+          outSlope: 0.04495597
+          tangentMode: 0
+          weightedMode: 0
+          inWeight: 0
+          outWeight: 0.18105072
+        - serializedVersion: 3
+          time: 1
+          value: 1
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+          weightedMode: 0
+          inWeight: 0
+          outWeight: 0
+        m_PreInfinity: 2
+        m_PostInfinity: 2
+        m_RotationOrder: 4
+      m_heightMaskCurve:
+        serializedVersion: 2
+        m_Curve:
+        - serializedVersion: 3
+          time: 0
+          value: 0
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+          weightedMode: 0
+          inWeight: 0
+          outWeight: 0
+        - serializedVersion: 3
+          time: 1
+          value: 1
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+          weightedMode: 0
+          inWeight: 0
+          outWeight: 0
+        m_PreInfinity: 2
+        m_PostInfinity: 2
+        m_RotationOrder: 4
+      m_heightMaskType: 1
+      m_heightMaskUnit: 1
+      m_relativeHeightMin: 25
+      m_relativeHeightMax: 75
+      m_absoluteHeightMin: 50
+      m_absoluteHeightMax: 150
+      m_seaLevelRelativeHeightMin: -109876.55
+      m_seaLevelRelativeHeightMax: 109876.55
+      tree1active: 0
+      tree2active: 0
+      m_slopeMaskCurve:
+        serializedVersion: 2
+        m_Curve:
+        - serializedVersion: 3
+          time: 0
+          value: 0
+          inSlope: 1
+          outSlope: 1
+          tangentMode: 0
+          weightedMode: 0
+          inWeight: 0
+          outWeight: 0
+        - serializedVersion: 3
+          time: 1
+          value: 1
+          inSlope: 1
+          outSlope: 1
+          tangentMode: 0
+          weightedMode: 0
+          inWeight: 0
+          outWeight: 0
+        m_PreInfinity: 2
+        m_PostInfinity: 2
+        m_RotationOrder: 4
+      m_slopeMin: 0
+      m_slopeMax: 0.1
+      m_distanceMaskAxes: 0
+      m_gaiaNoiseSettings:
+        m_translation: {x: 4.8807735, y: 0, z: -0.33202538}
+        m_rotation: {x: 0, y: 0, z: 0}
+        m_scale: {x: 8.49985, y: 1, z: 8.49985}
+        m_noiseTypeName: Perlin
+        m_noiseTypeParams: 
+        m_fractalTypeName: Fbm
+        m_fractalTypeParams: '{"warpOffsets":{"x":2.5,"y":1.399999976158142,"z":3.200000047683716,"w":2.700000047683716},"octavesMinMax":{"x":0.0,"y":16.0},"amplitudeMinMax":{"x":0.0,"y":1.0},"frequencyMinMax":{"x":0.0,"y":2.0},"lacunarityMinMax":{"x":0.0,"y":4.0},"persistenceMinMax":{"x":0.0,"y":1.0},"warpIterationsMinMax":{"x":0.0,"y":8.0},"warpStrengthMinMax":{"x":-2.0,"y":2.0},"octaves":8.0,"amplitude":0.5,"frequency":1.0,"persistence":0.5,"lacunarity":2.0,"warpIterations":1.0,"warpStrength":0.5,"warpEnabled":false,"warpExpanded":true}'
+        m_warpEnabled: 0
+        m_warpIterations: 0
+        m_warpStrength: 0
+        m_warpOffset: {x: 0, y: 0, z: 0, w: 0}
+      m_noiseSettings: {fileID: 2070947214}
+      m_noiseToolSettings:
+        worldHeightRemap: {x: 0, y: 0}
+        coordSpace: 0
+        noiseAssetGUID: 
+      m_ShowNoiseTransformSettings: 0
+      m_ShowNoisePreviewTexture: 0
+      m_noisePreviewTextureLocked: 1
+      m_ShowNoiseTypeSettings: 1
+      m_scaleNoiseToTerrainSize: 0
+      m_distanceMaskSquareRoundness: 0.25
+      m_collisionMaskExpanded: 1
+      m_collisionMasks: []
+      m_allPolyMasks: []
+      m_selectedPolyMaskObject: {fileID: 0}
+      m_erosionMaskOutput: 0
+      m_erosionSimScale: 9
+      m_erosionHydroTimeDelta: 0.05
+      m_erosionHydroIterations: 15
+      m_erosionThermalTimeDelta: 0.01
+      m_erosionThermalIterations: 80
+      m_erosionThermalReposeAngle: 80
+      m_erosionPrecipRate: 0.5
+      m_erosionEvaporationRate: 0.5
+      m_erosionFlowRate: 0.5
+      m_erosionSedimentCapacity: 0.5
+      m_erosionSedimentDepositRate: 0.8
+      m_erosionSedimentDissolveRate: 0.5
+      m_erosionRiverBankDepositRate: 7
+      m_erosionRiverBankDissolveRate: 5
+      m_erosionRiverBedDepositRate: 5
+      m_erosionRiverBedDissolveRate: 5
+      m_erosionShowAdvancedUI: 0
+      m_erosionShowThermalUI: 0
+      m_erosionShowWaterUI: 0
+      m_erosionShowSedimentUI: 0
+      m_erosionShowRiverBankUI: 0
+      m_smoothVerticality: 0
+      m_smoothBlurRadius: 1
+      m_curvatureBlurAmount: 0.001
+      m_curvatureWorldUnits: -1
+      m_curvatureIntensity: 0.7
+      m_textureMaskSpawnRuleGUID: 
+      m_concavity: 1
+      m_concavityFeatureSize: 10
+      m_foldedOut: 0
+      m_selectedWorldBiomeMaskGUID: 
+      m_growAndShrinkValue: 0
+      m_globalSpawnerMaskStackRT: {fileID: 0}
+    - m_active: 1
+      m_invert: 0
+      m_hasErrors: 0
+      m_influence: 0
+      m_operation: 10
+      m_blendMode: 1
+      m_imageMaskLocation: 1
+      m_strength: 1
+      m_seaLevel: 15
+      m_maxWorldHeight: 61.157185
+      m_minWorldHeight: 0
+      m_xOffSet: 0
+      m_zOffSet: 0
+      m_xOffSetScalar: 0
+      m_zOffSetScalar: 0
+      m_xScale: 1
+      m_zScale: 1
+      m_rotationDegrees: 0
+      m_tiling: 0
+      m_imageMaskSpace: 0
+      m_imageMaskTextureGUID: 
+      m_imageMaskFilterMode: 0
+      m_imageMaskColorSelectionColor: {r: 1, g: 1, b: 1, a: 1}
+      m_imageMaskColorSelectionAccuracy: 0.5
+      m_distanceMaskCurve:
+        serializedVersion: 2
+        m_Curve:
+        - serializedVersion: 3
+          time: 0
+          value: 1
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+          weightedMode: 0
+          inWeight: 0
+          outWeight: 0
+        - serializedVersion: 3
+          time: 1
+          value: 0
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+          weightedMode: 0
+          inWeight: 0
+          outWeight: 0
+        m_PreInfinity: 2
+        m_PostInfinity: 2
+        m_RotationOrder: 4
+      m_strengthTransformCurve:
+        serializedVersion: 2
+        m_Curve:
+        - serializedVersion: 3
+          time: 0
+          value: 0
+          inSlope: 1
+          outSlope: 1
+          tangentMode: 0
+          weightedMode: 0
+          inWeight: 0
+          outWeight: 0
+        - serializedVersion: 3
+          time: 1
+          value: 1
+          inSlope: 1
+          outSlope: 1
+          tangentMode: 0
+          weightedMode: 0
+          inWeight: 0
+          outWeight: 0
+        m_PreInfinity: 2
+        m_PostInfinity: 2
+        m_RotationOrder: 4
+      m_heightMaskCurve:
+        serializedVersion: 2
+        m_Curve:
+        - serializedVersion: 3
+          time: 0
+          value: 0
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+          weightedMode: 0
+          inWeight: 0
+          outWeight: 0
+        - serializedVersion: 3
+          time: 1
+          value: 1
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+          weightedMode: 0
+          inWeight: 0
+          outWeight: 0
+        m_PreInfinity: 2
+        m_PostInfinity: 2
+        m_RotationOrder: 4
+      m_heightMaskType: 1
+      m_heightMaskUnit: 1
+      m_relativeHeightMin: 25
+      m_relativeHeightMax: 75
+      m_absoluteHeightMin: 50
+      m_absoluteHeightMax: 150
+      m_seaLevelRelativeHeightMin: -109876.55
+      m_seaLevelRelativeHeightMax: 109876.55
+      tree1active: 0
+      tree2active: 0
+      m_slopeMaskCurve:
+        serializedVersion: 2
+        m_Curve:
+        - serializedVersion: 3
+          time: 0
+          value: 0
+          inSlope: 1
+          outSlope: 1
+          tangentMode: 0
+          weightedMode: 0
+          inWeight: 0
+          outWeight: 0
+        - serializedVersion: 3
+          time: 1
+          value: 1
+          inSlope: 1
+          outSlope: 1
+          tangentMode: 0
+          weightedMode: 0
+          inWeight: 0
+          outWeight: 0
+        m_PreInfinity: 2
+        m_PostInfinity: 2
+        m_RotationOrder: 4
+      m_slopeMin: 0
+      m_slopeMax: 0.1
+      m_distanceMaskAxes: 0
+      m_gaiaNoiseSettings:
+        m_translation: {x: 0, y: 0, z: 0}
+        m_rotation: {x: 0, y: 0, z: 0}
+        m_scale: {x: 10, y: 1, z: 10}
+        m_noiseTypeName: Perlin
+        m_noiseTypeParams: 
+        m_fractalTypeName: Fbm
+        m_fractalTypeParams: 
+        m_warpEnabled: 0
+        m_warpIterations: 0
+        m_warpStrength: 0
+        m_warpOffset: {x: 0, y: 0, z: 0, w: 0}
+      m_noiseSettings: {fileID: 0}
+      m_noiseToolSettings:
+        worldHeightRemap: {x: 0, y: 0}
+        coordSpace: 0
+        noiseAssetGUID: 
+      m_ShowNoiseTransformSettings: 0
+      m_ShowNoisePreviewTexture: 1
+      m_noisePreviewTextureLocked: 0
+      m_ShowNoiseTypeSettings: 0
+      m_scaleNoiseToTerrainSize: 0
+      m_distanceMaskSquareRoundness: 0.25
+      m_collisionMaskExpanded: 1
+      m_collisionMasks: []
+      m_allPolyMasks: []
+      m_selectedPolyMaskObject: {fileID: 0}
+      m_erosionMaskOutput: 0
+      m_erosionSimScale: 9
+      m_erosionHydroTimeDelta: 0.05
+      m_erosionHydroIterations: 15
+      m_erosionThermalTimeDelta: 0.01
+      m_erosionThermalIterations: 80
+      m_erosionThermalReposeAngle: 80
+      m_erosionPrecipRate: 0.5
+      m_erosionEvaporationRate: 0.5
+      m_erosionFlowRate: 0.5
+      m_erosionSedimentCapacity: 0.5
+      m_erosionSedimentDepositRate: 0.8
+      m_erosionSedimentDissolveRate: 0.5
+      m_erosionRiverBankDepositRate: 7
+      m_erosionRiverBankDissolveRate: 5
+      m_erosionRiverBedDepositRate: 5
+      m_erosionRiverBedDissolveRate: 5
+      m_erosionShowAdvancedUI: 0
+      m_erosionShowThermalUI: 0
+      m_erosionShowWaterUI: 0
+      m_erosionShowSedimentUI: 0
+      m_erosionShowRiverBankUI: 0
+      m_smoothVerticality: 0
+      m_smoothBlurRadius: 1
+      m_curvatureBlurAmount: 0.001
+      m_curvatureWorldUnits: -1
+      m_curvatureIntensity: 0.7
+      m_textureMaskSpawnRuleGUID: 
+      m_concavity: 1
+      m_concavityFeatureSize: 2.9
+      m_foldedOut: 0
+      m_selectedWorldBiomeMaskGUID: 
+      m_growAndShrinkValue: 0
+      m_globalSpawnerMaskStackRT: {fileID: 0}
+    - m_active: 1
+      m_invert: 0
+      m_hasErrors: 0
+      m_influence: 0
+      m_operation: 10
+      m_blendMode: 4
+      m_imageMaskLocation: 1
+      m_strength: 1
+      m_seaLevel: 15
+      m_maxWorldHeight: 61.157185
+      m_minWorldHeight: 0
+      m_xOffSet: 0
+      m_zOffSet: 0
+      m_xOffSetScalar: 0
+      m_zOffSetScalar: 0
+      m_xScale: 1
+      m_zScale: 1
+      m_rotationDegrees: 0
+      m_tiling: 0
+      m_imageMaskSpace: 0
+      m_imageMaskTextureGUID: 
+      m_imageMaskFilterMode: 0
+      m_imageMaskColorSelectionColor: {r: 1, g: 1, b: 1, a: 1}
+      m_imageMaskColorSelectionAccuracy: 0.5
+      m_distanceMaskCurve:
+        serializedVersion: 2
+        m_Curve:
+        - serializedVersion: 3
+          time: 0
+          value: 1
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+          weightedMode: 0
+          inWeight: 0
+          outWeight: 0
+        - serializedVersion: 3
+          time: 1
+          value: 0
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+          weightedMode: 0
+          inWeight: 0
+          outWeight: 0
+        m_PreInfinity: 2
+        m_PostInfinity: 2
+        m_RotationOrder: 4
+      m_strengthTransformCurve:
+        serializedVersion: 2
+        m_Curve:
+        - serializedVersion: 3
+          time: 0
+          value: 0
+          inSlope: 1
+          outSlope: 1
+          tangentMode: 0
+          weightedMode: 0
+          inWeight: 0
+          outWeight: 0
+        - serializedVersion: 3
+          time: 1
+          value: 1
+          inSlope: 1
+          outSlope: 1
+          tangentMode: 0
+          weightedMode: 0
+          inWeight: 0
+          outWeight: 0
+        m_PreInfinity: 2
+        m_PostInfinity: 2
+        m_RotationOrder: 4
+      m_heightMaskCurve:
+        serializedVersion: 2
+        m_Curve:
+        - serializedVersion: 3
+          time: 0
+          value: 0
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+          weightedMode: 0
+          inWeight: 0
+          outWeight: 0
+        - serializedVersion: 3
+          time: 1
+          value: 1
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+          weightedMode: 0
+          inWeight: 0
+          outWeight: 0
+        m_PreInfinity: 2
+        m_PostInfinity: 2
+        m_RotationOrder: 4
+      m_heightMaskType: 1
+      m_heightMaskUnit: 1
+      m_relativeHeightMin: 25
+      m_relativeHeightMax: 75
+      m_absoluteHeightMin: 50
+      m_absoluteHeightMax: 150
+      m_seaLevelRelativeHeightMin: -109876.55
+      m_seaLevelRelativeHeightMax: 109876.55
+      tree1active: 0
+      tree2active: 0
+      m_slopeMaskCurve:
+        serializedVersion: 2
+        m_Curve:
+        - serializedVersion: 3
+          time: 0
+          value: 0
+          inSlope: 1
+          outSlope: 1
+          tangentMode: 0
+          weightedMode: 0
+          inWeight: 0
+          outWeight: 0
+        - serializedVersion: 3
+          time: 1
+          value: 1
+          inSlope: 1
+          outSlope: 1
+          tangentMode: 0
+          weightedMode: 0
+          inWeight: 0
+          outWeight: 0
+        m_PreInfinity: 2
+        m_PostInfinity: 2
+        m_RotationOrder: 4
+      m_slopeMin: 0
+      m_slopeMax: 0.1
+      m_distanceMaskAxes: 0
+      m_gaiaNoiseSettings:
+        m_translation: {x: 0, y: 0, z: 0}
+        m_rotation: {x: 0, y: 0, z: 0}
+        m_scale: {x: 10, y: 1, z: 10}
+        m_noiseTypeName: Perlin
+        m_noiseTypeParams: 
+        m_fractalTypeName: Fbm
+        m_fractalTypeParams: 
+        m_warpEnabled: 0
+        m_warpIterations: 0
+        m_warpStrength: 0
+        m_warpOffset: {x: 0, y: 0, z: 0, w: 0}
+      m_noiseSettings: {fileID: 0}
+      m_noiseToolSettings:
+        worldHeightRemap: {x: 0, y: 0}
+        coordSpace: 0
+        noiseAssetGUID: 
+      m_ShowNoiseTransformSettings: 0
+      m_ShowNoisePreviewTexture: 1
+      m_noisePreviewTextureLocked: 0
+      m_ShowNoiseTypeSettings: 0
+      m_scaleNoiseToTerrainSize: 0
+      m_distanceMaskSquareRoundness: 0.25
+      m_collisionMaskExpanded: 1
+      m_collisionMasks: []
+      m_allPolyMasks: []
+      m_selectedPolyMaskObject: {fileID: 0}
+      m_erosionMaskOutput: 0
+      m_erosionSimScale: 9
+      m_erosionHydroTimeDelta: 0.05
+      m_erosionHydroIterations: 15
+      m_erosionThermalTimeDelta: 0.01
+      m_erosionThermalIterations: 80
+      m_erosionThermalReposeAngle: 80
+      m_erosionPrecipRate: 0.5
+      m_erosionEvaporationRate: 0.5
+      m_erosionFlowRate: 0.5
+      m_erosionSedimentCapacity: 0.5
+      m_erosionSedimentDepositRate: 0.8
+      m_erosionSedimentDissolveRate: 0.5
+      m_erosionRiverBankDepositRate: 7
+      m_erosionRiverBankDissolveRate: 5
+      m_erosionRiverBedDepositRate: 5
+      m_erosionRiverBedDissolveRate: 5
+      m_erosionShowAdvancedUI: 0
+      m_erosionShowThermalUI: 0
+      m_erosionShowWaterUI: 0
+      m_erosionShowSedimentUI: 0
+      m_erosionShowRiverBankUI: 0
+      m_smoothVerticality: 0
+      m_smoothBlurRadius: 1
+      m_curvatureBlurAmount: 0.001
+      m_curvatureWorldUnits: -1
+      m_curvatureIntensity: 0.7
+      m_textureMaskSpawnRuleGUID: 
+      m_concavity: -1
+      m_concavityFeatureSize: 2.5
+      m_foldedOut: 0
+      m_selectedWorldBiomeMaskGUID: 
+      m_growAndShrinkValue: 0
+      m_globalSpawnerMaskStackRT: {fileID: 0}
+    - m_active: 1
+      m_invert: 0
+      m_hasErrors: 0
+      m_influence: 0
+      m_operation: 2
+      m_blendMode: 0
+      m_imageMaskLocation: 1
+      m_strength: 1
+      m_seaLevel: 15
+      m_maxWorldHeight: 61.157185
+      m_minWorldHeight: 0
+      m_xOffSet: 0
+      m_zOffSet: 0
+      m_xOffSetScalar: 0
+      m_zOffSetScalar: 0
+      m_xScale: 1
+      m_zScale: 1
+      m_rotationDegrees: 0
+      m_tiling: 0
+      m_imageMaskSpace: 0
+      m_imageMaskTextureGUID: 
+      m_imageMaskFilterMode: 0
+      m_imageMaskColorSelectionColor: {r: 1, g: 1, b: 1, a: 1}
+      m_imageMaskColorSelectionAccuracy: 0.5
+      m_distanceMaskCurve:
+        serializedVersion: 2
+        m_Curve:
+        - serializedVersion: 3
+          time: 0
+          value: 1
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+          weightedMode: 0
+          inWeight: 0
+          outWeight: 0
+        - serializedVersion: 3
+          time: 1
+          value: 0
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+          weightedMode: 0
+          inWeight: 0
+          outWeight: 0
+        m_PreInfinity: 2
+        m_PostInfinity: 2
+        m_RotationOrder: 4
+      m_strengthTransformCurve:
+        serializedVersion: 2
+        m_Curve:
+        - serializedVersion: 3
+          time: 0
+          value: 0
+          inSlope: 1
+          outSlope: 1
+          tangentMode: 0
+          weightedMode: 0
+          inWeight: 0
+          outWeight: 0
+        - serializedVersion: 3
+          time: 1
+          value: 1
+          inSlope: 1
+          outSlope: 1
+          tangentMode: 0
+          weightedMode: 0
+          inWeight: 0
+          outWeight: 0
+        m_PreInfinity: 2
+        m_PostInfinity: 2
+        m_RotationOrder: 4
+      m_heightMaskCurve:
+        serializedVersion: 2
+        m_Curve:
+        - serializedVersion: 3
+          time: 0
+          value: 0
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+          weightedMode: 0
+          inWeight: 0
+          outWeight: 0
+        - serializedVersion: 3
+          time: 0.069453746
+          value: 0.995101
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+          weightedMode: 0
+          inWeight: 0.33333334
+          outWeight: 0.33333334
+        - serializedVersion: 3
+          time: 0.88955206
+          value: 1.0015876
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+          weightedMode: 0
+          inWeight: 0.036676925
+          outWeight: 0.33333334
+        - serializedVersion: 3
+          time: 1
+          value: 0.004219413
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+          weightedMode: 0
+          inWeight: 0
+          outWeight: 0
+        m_PreInfinity: 2
+        m_PostInfinity: 2
+        m_RotationOrder: 4
+      m_heightMaskType: 1
+      m_heightMaskUnit: 1
+      m_relativeHeightMin: 5.56
+      m_relativeHeightMax: 69.54
+      m_absoluteHeightMin: 30.748531
+      m_absoluteHeightMax: 94.72853
+      m_seaLevelRelativeHeightMin: -109876.55
+      m_seaLevelRelativeHeightMax: 109876.55
+      tree1active: 0
+      tree2active: 0
+      m_slopeMaskCurve:
+        serializedVersion: 2
+        m_Curve:
+        - serializedVersion: 3
+          time: 0
+          value: 1
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+          weightedMode: 0
+          inWeight: 0
+          outWeight: 0
+        - serializedVersion: 3
+          time: 1
+          value: 0
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+          weightedMode: 0
+          inWeight: 0
+          outWeight: 0
+        m_PreInfinity: 2
+        m_PostInfinity: 2
+        m_RotationOrder: 4
+      m_slopeMin: 0
+      m_slopeMax: 0.1
+      m_distanceMaskAxes: 0
+      m_gaiaNoiseSettings:
+        m_translation: {x: 0, y: 0, z: 0}
+        m_rotation: {x: 0, y: 0, z: 0}
+        m_scale: {x: 10, y: 1, z: 10}
+        m_noiseTypeName: Perlin
+        m_noiseTypeParams: 
+        m_fractalTypeName: Fbm
+        m_fractalTypeParams: 
+        m_warpEnabled: 0
+        m_warpIterations: 0
+        m_warpStrength: 0
+        m_warpOffset: {x: 0, y: 0, z: 0, w: 0}
+      m_noiseSettings: {fileID: 0}
+      m_noiseToolSettings:
+        worldHeightRemap: {x: 0, y: 0}
+        coordSpace: 0
+        noiseAssetGUID: 
+      m_ShowNoiseTransformSettings: 0
+      m_ShowNoisePreviewTexture: 1
+      m_noisePreviewTextureLocked: 0
+      m_ShowNoiseTypeSettings: 0
+      m_scaleNoiseToTerrainSize: 0
+      m_distanceMaskSquareRoundness: 0.25
+      m_collisionMaskExpanded: 1
+      m_collisionMasks: []
+      m_allPolyMasks: []
+      m_selectedPolyMaskObject: {fileID: 0}
+      m_erosionMaskOutput: 0
+      m_erosionSimScale: 9
+      m_erosionHydroTimeDelta: 0.05
+      m_erosionHydroIterations: 15
+      m_erosionThermalTimeDelta: 0.01
+      m_erosionThermalIterations: 80
+      m_erosionThermalReposeAngle: 80
+      m_erosionPrecipRate: 0.5
+      m_erosionEvaporationRate: 0.5
+      m_erosionFlowRate: 0.5
+      m_erosionSedimentCapacity: 0.5
+      m_erosionSedimentDepositRate: 0.8
+      m_erosionSedimentDissolveRate: 0.5
+      m_erosionRiverBankDepositRate: 7
+      m_erosionRiverBankDissolveRate: 5
+      m_erosionRiverBedDepositRate: 5
+      m_erosionRiverBedDissolveRate: 5
+      m_erosionShowAdvancedUI: 0
+      m_erosionShowThermalUI: 0
+      m_erosionShowWaterUI: 0
+      m_erosionShowSedimentUI: 0
+      m_erosionShowRiverBankUI: 0
+      m_smoothVerticality: 0
+      m_smoothBlurRadius: 1
+      m_curvatureBlurAmount: 0.001
+      m_curvatureWorldUnits: -1
+      m_curvatureIntensity: 0.7
+      m_textureMaskSpawnRuleGUID: 
+      m_concavity: 1
+      m_concavityFeatureSize: 10
+      m_foldedOut: 0
+      m_selectedWorldBiomeMaskGUID: 
+      m_growAndShrinkValue: 0
+      m_globalSpawnerMaskStackRT: {fileID: 0}
+    m_visualisationColor: {r: 0.7200285, g: 0, b: 1, a: 1}
+    m_noiseMask: 0
+    m_noiseMaskSeed: 0
+    m_noiseMaskOctaves: 8
+    m_noiseMaskPersistence: 0.25
+    m_noiseMaskFrequency: 1
+    m_noiseMaskLacunarity: 1.5
+    m_noiseZoom: 50
+    m_noiseStrength: 1
+    m_noiseInvert: 0
+    m_isActive: 1
+    m_isFoldedOut: 1
+    m_currInstanceCnt: 0
+    m_activeInstanceCnt: 0
+    m_inactiveInstanceCnt: 0
+    m_resourceSettingsFoldedOut: 1
+    m_isHelpActive: 0
+    m_spawnedInstances: 2148
     m_goSpawnTargetMode: 0
     m_goSpawnTarget: {fileID: 0}
     m_terrainGOSpawnTargetName: Gaia Game Object Spawns
@@ -40376,7 +42130,7 @@ MonoBehaviour:
       m_imageMaskLocation: 1
       m_strength: 1
       m_seaLevel: 15
-      m_maxWorldHeight: 60.90718
+      m_maxWorldHeight: 61.157185
       m_minWorldHeight: 0
       m_xOffSet: 0
       m_zOffSet: 0
@@ -40642,7 +42396,7 @@ MonoBehaviour:
       m_imageMaskLocation: 1
       m_strength: 1
       m_seaLevel: 15
-      m_maxWorldHeight: 60.90718
+      m_maxWorldHeight: 61.157185
       m_minWorldHeight: 0
       m_xOffSet: 0
       m_zOffSet: 0
@@ -40890,7 +42644,7 @@ MonoBehaviour:
       m_imageMaskLocation: 1
       m_strength: 1
       m_seaLevel: 15
-      m_maxWorldHeight: 60.90718
+      m_maxWorldHeight: 61.157185
       m_minWorldHeight: 0
       m_xOffSet: 0
       m_zOffSet: 0
@@ -41111,7 +42865,7 @@ MonoBehaviour:
       m_imageMaskLocation: 1
       m_strength: 1
       m_seaLevel: 15
-      m_maxWorldHeight: 60.90718
+      m_maxWorldHeight: 61.157185
       m_minWorldHeight: 0
       m_xOffSet: 0
       m_zOffSet: 0
@@ -41375,7 +43129,7 @@ MonoBehaviour:
     m_imageMaskLocation: 0
     m_strength: 1
     m_seaLevel: 15
-    m_maxWorldHeight: 60.90718
+    m_maxWorldHeight: 61.157185
     m_minWorldHeight: 0
     m_xOffSet: 0
     m_zOffSet: 0
@@ -41578,7 +43332,7 @@ MonoBehaviour:
     m_imageMaskLocation: 0
     m_strength: 1
     m_seaLevel: 15
-    m_maxWorldHeight: 60.90718
+    m_maxWorldHeight: 61.157185
     m_minWorldHeight: 0
     m_xOffSet: 0
     m_zOffSet: 0
@@ -41781,7 +43535,7 @@ MonoBehaviour:
     m_imageMaskLocation: 0
     m_strength: 1
     m_seaLevel: 15
-    m_maxWorldHeight: 60.90718
+    m_maxWorldHeight: 61.157185
     m_minWorldHeight: 0
     m_xOffSet: 0
     m_zOffSet: 0
@@ -41984,7 +43738,7 @@ MonoBehaviour:
     m_imageMaskLocation: 0
     m_strength: 1
     m_seaLevel: 15
-    m_maxWorldHeight: 60.90718
+    m_maxWorldHeight: 61.157185
     m_minWorldHeight: 0
     m_xOffSet: 0
     m_zOffSet: 0
@@ -42606,7 +44360,7 @@ MonoBehaviour:
   m_spawnRuleStampsToggleAllState: 1
   m_drawPreview: 0
   m_previewRuleIds: 
-  m_maxWorldHeight: 60.90718
+  m_maxWorldHeight: 61.157185
   m_minWorldHeight: 0
   m_showSeaLevelinStampPreview: 1
   m_terrainGeneratorPanelUnfolded: 1
@@ -43248,6 +45002,18 @@ MonoBehaviour:
     fractalTypeName: Fbm
     noiseTypeParams: 
     fractalTypeParams: '{"warpOffsets":{"x":2.5,"y":1.399999976158142,"z":3.200000047683716,"w":2.700000047683716},"octavesMinMax":{"x":0.0,"y":16.0},"amplitudeMinMax":{"x":0.0,"y":1.0},"frequencyMinMax":{"x":0.0,"y":2.0},"lacunarityMinMax":{"x":0.0,"y":4.0},"persistenceMinMax":{"x":0.0,"y":1.0},"warpIterationsMinMax":{"x":0.0,"y":8.0},"warpStrengthMinMax":{"x":-2.0,"y":2.0},"octaves":8.0,"amplitude":0.5,"frequency":1.0,"persistence":0.5,"lacunarity":2.0,"warpIterations":1.0,"warpStrength":0.5,"warpEnabled":false,"warpExpanded":true}'
+--- !u!134 &1398794834
+PhysicMaterial:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: 
+  dynamicFriction: 0.6
+  staticFriction: 0.6
+  bounciness: 0
+  frictionCombine: 0
+  bounceCombine: 0
 --- !u!1 &1406561426
 GameObject:
   m_ObjectHideFlags: 0
@@ -50510,7 +52276,7 @@ MonoBehaviour:
   m_spawnRange: 512
   m_generateRandomSeed: 1
   m_randomSeed: 1858717033
-  m_spawnDensity: 0.8
+  m_spawnDensity: 1
   m_resourcesPath: 
   m_spawnerRules:
   - m_name: Sand
@@ -50592,7 +52358,7 @@ MonoBehaviour:
       m_blendMode: 0
       m_imageMaskLocation: 1
       m_strength: 1
-      m_seaLevel: 12.5
+      m_seaLevel: 15
       m_maxWorldHeight: 61.157185
       m_minWorldHeight: 0
       m_xOffSet: 0
@@ -50786,7 +52552,7 @@ MonoBehaviour:
       m_blendMode: 3
       m_imageMaskLocation: 1
       m_strength: 1
-      m_seaLevel: 12.5
+      m_seaLevel: 15
       m_maxWorldHeight: 61.157185
       m_minWorldHeight: 0
       m_xOffSet: 0
@@ -50998,7 +52764,7 @@ MonoBehaviour:
       m_blendMode: 0
       m_imageMaskLocation: 1
       m_strength: 1
-      m_seaLevel: 12.5
+      m_seaLevel: 15
       m_maxWorldHeight: 61.157185
       m_minWorldHeight: 0
       m_xOffSet: 0
@@ -51246,7 +53012,7 @@ MonoBehaviour:
       m_blendMode: 0
       m_imageMaskLocation: 1
       m_strength: 1
-      m_seaLevel: 12.5
+      m_seaLevel: 15
       m_maxWorldHeight: 61.157185
       m_minWorldHeight: 0
       m_xOffSet: 0
@@ -51440,7 +53206,7 @@ MonoBehaviour:
       m_blendMode: 0
       m_imageMaskLocation: 1
       m_strength: 1
-      m_seaLevel: 12.5
+      m_seaLevel: 15
       m_maxWorldHeight: 61.157185
       m_minWorldHeight: 0
       m_xOffSet: 0
@@ -51706,7 +53472,7 @@ MonoBehaviour:
       m_blendMode: 0
       m_imageMaskLocation: 1
       m_strength: 1
-      m_seaLevel: 12.5
+      m_seaLevel: 15
       m_maxWorldHeight: 61.157185
       m_minWorldHeight: 0
       m_xOffSet: 0
@@ -51900,7 +53666,7 @@ MonoBehaviour:
       m_blendMode: 0
       m_imageMaskLocation: 1
       m_strength: 1
-      m_seaLevel: 12.5
+      m_seaLevel: 15
       m_maxWorldHeight: 61.157185
       m_minWorldHeight: 0
       m_xOffSet: 0
@@ -52094,7 +53860,7 @@ MonoBehaviour:
       m_blendMode: 0
       m_imageMaskLocation: 1
       m_strength: 1
-      m_seaLevel: 12.5
+      m_seaLevel: 15
       m_maxWorldHeight: 61.157185
       m_minWorldHeight: 0
       m_xOffSet: 0
@@ -52360,7 +54126,7 @@ MonoBehaviour:
       m_blendMode: 0
       m_imageMaskLocation: 1
       m_strength: 1
-      m_seaLevel: 12.5
+      m_seaLevel: 15
       m_maxWorldHeight: 61.157185
       m_minWorldHeight: 0
       m_xOffSet: 0
@@ -52554,7 +54320,7 @@ MonoBehaviour:
       m_blendMode: 2
       m_imageMaskLocation: 1
       m_strength: 1
-      m_seaLevel: 12.5
+      m_seaLevel: 15
       m_maxWorldHeight: 61.157185
       m_minWorldHeight: 0
       m_xOffSet: 0
@@ -52748,7 +54514,7 @@ MonoBehaviour:
       m_blendMode: 1
       m_imageMaskLocation: 1
       m_strength: 1
-      m_seaLevel: 12.5
+      m_seaLevel: 15
       m_maxWorldHeight: 61.157185
       m_minWorldHeight: 0
       m_xOffSet: 0
@@ -52960,7 +54726,7 @@ MonoBehaviour:
       m_blendMode: 3
       m_imageMaskLocation: 1
       m_strength: 1
-      m_seaLevel: 12.5
+      m_seaLevel: 15
       m_maxWorldHeight: 61.157185
       m_minWorldHeight: 0
       m_xOffSet: 0
@@ -53154,7 +54920,7 @@ MonoBehaviour:
       m_blendMode: 0
       m_imageMaskLocation: 1
       m_strength: 1
-      m_seaLevel: 12.5
+      m_seaLevel: 15
       m_maxWorldHeight: 61.157185
       m_minWorldHeight: 0
       m_xOffSet: 0
@@ -53366,7 +55132,7 @@ MonoBehaviour:
       m_blendMode: 0
       m_imageMaskLocation: 1
       m_strength: 1
-      m_seaLevel: 12.5
+      m_seaLevel: 15
       m_maxWorldHeight: 61.157185
       m_minWorldHeight: 0
       m_xOffSet: 0
@@ -53623,7 +55389,7 @@ MonoBehaviour:
       m_blendMode: 0
       m_imageMaskLocation: 1
       m_strength: 1
-      m_seaLevel: 12.5
+      m_seaLevel: 15
       m_maxWorldHeight: 61.157185
       m_minWorldHeight: 0
       m_xOffSet: 0
@@ -53871,7 +55637,7 @@ MonoBehaviour:
       m_blendMode: 0
       m_imageMaskLocation: 1
       m_strength: 1
-      m_seaLevel: 12.5
+      m_seaLevel: 15
       m_maxWorldHeight: 61.157185
       m_minWorldHeight: 0
       m_xOffSet: 0
@@ -54065,7 +55831,7 @@ MonoBehaviour:
       m_blendMode: 0
       m_imageMaskLocation: 1
       m_strength: 1
-      m_seaLevel: 12.5
+      m_seaLevel: 15
       m_maxWorldHeight: 61.157185
       m_minWorldHeight: 0
       m_xOffSet: 0
@@ -54331,7 +56097,7 @@ MonoBehaviour:
       m_blendMode: 0
       m_imageMaskLocation: 1
       m_strength: 1
-      m_seaLevel: 12.5
+      m_seaLevel: 15
       m_maxWorldHeight: 61.157185
       m_minWorldHeight: 0
       m_xOffSet: 0
@@ -54543,7 +56309,7 @@ MonoBehaviour:
       m_blendMode: 3
       m_imageMaskLocation: 1
       m_strength: 1
-      m_seaLevel: 12.5
+      m_seaLevel: 15
       m_maxWorldHeight: 61.157185
       m_minWorldHeight: 0
       m_xOffSet: 0
@@ -54755,7 +56521,7 @@ MonoBehaviour:
       m_blendMode: 0
       m_imageMaskLocation: 1
       m_strength: 1
-      m_seaLevel: 12.5
+      m_seaLevel: 15
       m_maxWorldHeight: 61.157185
       m_minWorldHeight: 0
       m_xOffSet: 0
@@ -54967,7 +56733,7 @@ MonoBehaviour:
       m_blendMode: 4
       m_imageMaskLocation: 1
       m_strength: 1
-      m_seaLevel: 12.5
+      m_seaLevel: 15
       m_maxWorldHeight: 61.157185
       m_minWorldHeight: 0
       m_xOffSet: 0
@@ -55215,7 +56981,7 @@ MonoBehaviour:
       m_blendMode: 0
       m_imageMaskLocation: 1
       m_strength: 1
-      m_seaLevel: 12.5
+      m_seaLevel: 15
       m_maxWorldHeight: 61.157185
       m_minWorldHeight: 0
       m_xOffSet: 0
@@ -55427,7 +57193,7 @@ MonoBehaviour:
       m_blendMode: 0
       m_imageMaskLocation: 1
       m_strength: 1
-      m_seaLevel: 12.5
+      m_seaLevel: 15
       m_maxWorldHeight: 61.157185
       m_minWorldHeight: 0
       m_xOffSet: 0
@@ -55639,7 +57405,7 @@ MonoBehaviour:
       m_blendMode: 0
       m_imageMaskLocation: 1
       m_strength: 1
-      m_seaLevel: 12.5
+      m_seaLevel: 15
       m_maxWorldHeight: 61.157185
       m_minWorldHeight: 0
       m_xOffSet: 0
@@ -55860,7 +57626,7 @@ MonoBehaviour:
       m_blendMode: 0
       m_imageMaskLocation: 1
       m_strength: 1
-      m_seaLevel: 12.5
+      m_seaLevel: 15
       m_maxWorldHeight: 61.157185
       m_minWorldHeight: 0
       m_xOffSet: 0
@@ -57157,27 +58923,27 @@ PrefabInstance:
     - target: {fileID: -8679921383154817045, guid: e74c01461eaa74d47bc726ed8951bcfc,
         type: 3}
       propertyPath: m_LocalScale.x
-      value: 1.0153133
+      value: 1.1955202
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: e74c01461eaa74d47bc726ed8951bcfc,
         type: 3}
       propertyPath: m_LocalScale.y
-      value: 1.0153133
+      value: 1.1955202
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: e74c01461eaa74d47bc726ed8951bcfc,
         type: 3}
       propertyPath: m_LocalScale.z
-      value: 1.0153133
+      value: 1.1955202
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: e74c01461eaa74d47bc726ed8951bcfc,
         type: 3}
       propertyPath: m_LocalPosition.x
-      value: -26.220135
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: e74c01461eaa74d47bc726ed8951bcfc,
         type: 3}
       propertyPath: m_LocalPosition.y
-      value: -63.35086
+      value: -0.99986076
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: e74c01461eaa74d47bc726ed8951bcfc,
         type: 3}
@@ -57224,6 +58990,11 @@ PrefabInstance:
       propertyPath: m_Name
       value: HunterVisual
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: e74c01461eaa74d47bc726ed8951bcfc,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -57232,10 +59003,6 @@ PrefabInstance:
         type: 3}
       insertIndex: -1
       addedObject: {fileID: 1647436256}
-    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: e74c01461eaa74d47bc726ed8951bcfc,
-        type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 1647436257}
   m_SourcePrefab: {fileID: 100100000, guid: e74c01461eaa74d47bc726ed8951bcfc, type: 3}
 --- !u!4 &1647436254 stripped
 Transform:
@@ -57262,7 +59029,7 @@ Animator:
   m_Controller: {fileID: 9100000, guid: a1a033f4f03451c45aa9240a86f2254a, type: 2}
   m_CullingMode: 0
   m_UpdateMode: 0
-  m_ApplyRootMotion: 1
+  m_ApplyRootMotion: 0
   m_LinearVelocityBlending: 0
   m_StabilizeFeet: 0
   m_WarningMessage: 
@@ -57270,18 +59037,6 @@ Animator:
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
   m_WriteDefaultValuesOnDisable: 0
---- !u!114 &1647436257
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1647436255}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 980933c7bc5682845abc35514f2289bc, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!114 &1666963476
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -57840,7 +59595,7 @@ BoxCollider:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1675861010}
-  m_Material: {fileID: 0}
+  m_Material: {fileID: 1213158065}
   m_IncludeLayers:
     serializedVersion: 2
     m_Bits: 0
@@ -58179,7 +59934,7 @@ MonoBehaviour:
       m_imageMaskLocation: 1
       m_strength: 1
       m_seaLevel: 15
-      m_maxWorldHeight: 60.90718
+      m_maxWorldHeight: 61.157185
       m_minWorldHeight: 0
       m_xOffSet: 0
       m_zOffSet: 0
@@ -58382,7 +60137,7 @@ MonoBehaviour:
       m_imageMaskLocation: 1
       m_strength: 1
       m_seaLevel: 15
-      m_maxWorldHeight: 60.90718
+      m_maxWorldHeight: 61.157185
       m_minWorldHeight: 0
       m_xOffSet: 0
       m_zOffSet: 0
@@ -58576,7 +60331,7 @@ MonoBehaviour:
       m_imageMaskLocation: 1
       m_strength: 1
       m_seaLevel: 15
-      m_maxWorldHeight: 60.90718
+      m_maxWorldHeight: 61.157185
       m_minWorldHeight: 0
       m_xOffSet: 0
       m_zOffSet: 0
@@ -58788,7 +60543,7 @@ MonoBehaviour:
       m_imageMaskLocation: 1
       m_strength: 1
       m_seaLevel: 15
-      m_maxWorldHeight: 60.90718
+      m_maxWorldHeight: 61.157185
       m_minWorldHeight: 0
       m_xOffSet: 0
       m_zOffSet: 0
@@ -59036,7 +60791,7 @@ MonoBehaviour:
       m_imageMaskLocation: 1
       m_strength: 1
       m_seaLevel: 15
-      m_maxWorldHeight: 60.90718
+      m_maxWorldHeight: 61.157185
       m_minWorldHeight: 0
       m_xOffSet: 0
       m_zOffSet: 0
@@ -59293,7 +61048,7 @@ MonoBehaviour:
       m_imageMaskLocation: 1
       m_strength: 1
       m_seaLevel: 15
-      m_maxWorldHeight: 60.90718
+      m_maxWorldHeight: 61.157185
       m_minWorldHeight: 0
       m_xOffSet: 0
       m_zOffSet: 0
@@ -59487,7 +61242,7 @@ MonoBehaviour:
       m_imageMaskLocation: 1
       m_strength: 1
       m_seaLevel: 15
-      m_maxWorldHeight: 60.90718
+      m_maxWorldHeight: 61.157185
       m_minWorldHeight: 0
       m_xOffSet: 0
       m_zOffSet: 0
@@ -59681,7 +61436,7 @@ MonoBehaviour:
       m_imageMaskLocation: 1
       m_strength: 1
       m_seaLevel: 15
-      m_maxWorldHeight: 60.90718
+      m_maxWorldHeight: 61.157185
       m_minWorldHeight: 0
       m_xOffSet: 0
       m_zOffSet: 0
@@ -59947,7 +61702,7 @@ MonoBehaviour:
       m_imageMaskLocation: 1
       m_strength: 1
       m_seaLevel: 15
-      m_maxWorldHeight: 60.90718
+      m_maxWorldHeight: 61.157185
       m_minWorldHeight: 0
       m_xOffSet: 0
       m_zOffSet: 0
@@ -60141,7 +61896,7 @@ MonoBehaviour:
       m_imageMaskLocation: 1
       m_strength: 1
       m_seaLevel: 15
-      m_maxWorldHeight: 60.90718
+      m_maxWorldHeight: 61.157185
       m_minWorldHeight: 0
       m_xOffSet: 0
       m_zOffSet: 0
@@ -60335,7 +62090,7 @@ MonoBehaviour:
       m_imageMaskLocation: 1
       m_strength: 1
       m_seaLevel: 15
-      m_maxWorldHeight: 60.90718
+      m_maxWorldHeight: 61.157185
       m_minWorldHeight: 0
       m_xOffSet: 0
       m_zOffSet: 0
@@ -60601,7 +62356,7 @@ MonoBehaviour:
       m_imageMaskLocation: 1
       m_strength: 1
       m_seaLevel: 15
-      m_maxWorldHeight: 60.90718
+      m_maxWorldHeight: 61.157185
       m_minWorldHeight: 0
       m_xOffSet: 0
       m_zOffSet: 0
@@ -60804,7 +62559,7 @@ MonoBehaviour:
       m_imageMaskLocation: 1
       m_strength: 1
       m_seaLevel: 15
-      m_maxWorldHeight: 60.90718
+      m_maxWorldHeight: 61.157185
       m_minWorldHeight: 0
       m_xOffSet: 0
       m_zOffSet: 0
@@ -60998,7 +62753,7 @@ MonoBehaviour:
       m_imageMaskLocation: 1
       m_strength: 1
       m_seaLevel: 15
-      m_maxWorldHeight: 60.90718
+      m_maxWorldHeight: 61.157185
       m_minWorldHeight: 0
       m_xOffSet: 0
       m_zOffSet: 0
@@ -61264,7 +63019,7 @@ MonoBehaviour:
       m_imageMaskLocation: 1
       m_strength: 1
       m_seaLevel: 15
-      m_maxWorldHeight: 60.90718
+      m_maxWorldHeight: 61.157185
       m_minWorldHeight: 0
       m_xOffSet: 0
       m_zOffSet: 0
@@ -61467,7 +63222,7 @@ MonoBehaviour:
       m_imageMaskLocation: 1
       m_strength: 1
       m_seaLevel: 15
-      m_maxWorldHeight: 60.90718
+      m_maxWorldHeight: 61.157185
       m_minWorldHeight: 0
       m_xOffSet: 0
       m_zOffSet: 0
@@ -61661,7 +63416,7 @@ MonoBehaviour:
       m_imageMaskLocation: 1
       m_strength: 1
       m_seaLevel: 15
-      m_maxWorldHeight: 60.90718
+      m_maxWorldHeight: 61.157185
       m_minWorldHeight: 0
       m_xOffSet: 0
       m_zOffSet: 0
@@ -61927,7 +63682,7 @@ MonoBehaviour:
       m_imageMaskLocation: 1
       m_strength: 1
       m_seaLevel: 15
-      m_maxWorldHeight: 60.90718
+      m_maxWorldHeight: 61.157185
       m_minWorldHeight: 0
       m_xOffSet: 0
       m_zOffSet: 0
@@ -62130,7 +63885,7 @@ MonoBehaviour:
       m_imageMaskLocation: 1
       m_strength: 1
       m_seaLevel: 15
-      m_maxWorldHeight: 60.90718
+      m_maxWorldHeight: 61.157185
       m_minWorldHeight: 0
       m_xOffSet: 0
       m_zOffSet: 0
@@ -62324,7 +64079,7 @@ MonoBehaviour:
       m_imageMaskLocation: 1
       m_strength: 1
       m_seaLevel: 15
-      m_maxWorldHeight: 60.90718
+      m_maxWorldHeight: 61.157185
       m_minWorldHeight: 0
       m_xOffSet: 0
       m_zOffSet: 0
@@ -62578,7 +64333,7 @@ MonoBehaviour:
     m_imageMaskLocation: 0
     m_strength: 1
     m_seaLevel: 15
-    m_maxWorldHeight: 60.90718
+    m_maxWorldHeight: 61.157185
     m_minWorldHeight: 0
     m_xOffSet: 0
     m_zOffSet: 0
@@ -62788,7 +64543,7 @@ MonoBehaviour:
     m_imageMaskLocation: 0
     m_strength: 1
     m_seaLevel: 15
-    m_maxWorldHeight: 60.90718
+    m_maxWorldHeight: 61.157185
     m_minWorldHeight: 0
     m_xOffSet: 0
     m_zOffSet: 0
@@ -67217,6 +68972,18 @@ MonoBehaviour:
     m_selectedWorldBiomeMaskGUID: 
     m_growAndShrinkValue: 0
     m_globalSpawnerMaskStackRT: {fileID: 0}
+--- !u!134 &1848048141
+PhysicMaterial:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: ' (Instance) (Instance)'
+  dynamicFriction: 0.6
+  staticFriction: 0.6
+  bounciness: 0
+  frictionCombine: 0
+  bounceCombine: 0
 --- !u!1 &1859621105
 GameObject:
   m_ObjectHideFlags: 0
@@ -67368,18 +69135,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!134 &1892452484
-PhysicMaterial:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_Name: 
-  dynamicFriction: 0.6
-  staticFriction: 0.6
-  bounciness: 0
-  frictionCombine: 0
-  bounceCombine: 0
 --- !u!114 &1894025231
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -67852,6 +69607,18 @@ MonoBehaviour:
     m_selectedWorldBiomeMaskGUID: 
     m_growAndShrinkValue: 0
     m_globalSpawnerMaskStackRT: {fileID: 0}
+--- !u!134 &1913620176
+PhysicMaterial:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: ' (Instance)'
+  dynamicFriction: 0.6
+  staticFriction: 0.6
+  bounciness: 0
+  frictionCombine: 0
+  bounceCombine: 0
 --- !u!1 &1927219993
 GameObject:
   m_ObjectHideFlags: 0
@@ -67897,14 +69664,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_visibilityEntries:
-  - m_name: Small Farm 1
-    m_isVisible: 1
-  - m_name: Small Farm 2
-    m_isVisible: 1
-  - m_name: Small Farm 3
-    m_isVisible: 1
-  - m_name: Small Farm 4
-    m_isVisible: 1
   - m_name: PW_Tree_Stump_05
     m_isVisible: 1
   - m_name: PW_Tree_Stump_04_02
@@ -67912,6 +69671,14 @@ MonoBehaviour:
   - m_name: PW_Tree_Log_02
     m_isVisible: 1
   - m_name: PW_Tree_Dead_03_Fallen
+    m_isVisible: 1
+  - m_name: Small Farm 1
+    m_isVisible: 1
+  - m_name: Small Farm 2
+    m_isVisible: 1
+  - m_name: Small Farm 3
+    m_isVisible: 1
+  - m_name: Small Farm 4
     m_isVisible: 1
   - m_name: Mushroom 1
     m_isVisible: 1
@@ -68075,30 +69842,18 @@ MeshRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!114 &1955037481
-MonoBehaviour:
+--- !u!134 &1941621363
+PhysicMaterial:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: cba17d399ab86974c8ef9551f6e8f8d4, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: 
-  transformSettings:
-    translation: {x: 1389.8464, y: 146.64413, z: 1237.2158}
-    scale: {x: 5.1686354, y: 1, z: 5.1686354}
-    rotation: {x: 0, y: 0, z: 0}
-    flipScaleX: 0
-    flipScaleY: 0
-    flipScaleZ: 0
-  domainSettings:
-    noiseTypeName: Perlin
-    fractalTypeName: Fbm
-    noiseTypeParams: 
-    fractalTypeParams: '{"warpOffsets":{"x":-23.62227439880371,"y":-740.6602172851563,"z":295.54010009765627,"w":0.0},"octavesMinMax":{"x":0.0,"y":16.0},"amplitudeMinMax":{"x":0.0,"y":1.0},"frequencyMinMax":{"x":0.0,"y":2.0},"lacunarityMinMax":{"x":0.0,"y":4.0},"persistenceMinMax":{"x":0.0,"y":1.0},"warpIterationsMinMax":{"x":0.0,"y":8.0},"warpStrengthMinMax":{"x":-2.0,"y":2.0},"octaves":8.0,"amplitude":0.5978570580482483,"frequency":1.0,"persistence":0.5,"lacunarity":1.2288411855697632,"warpIterations":0.12008093297481537,"warpStrength":0.4457036256790161,"warpEnabled":true,"warpExpanded":true}'
+  dynamicFriction: 0.6
+  staticFriction: 0.6
+  bounciness: 0
+  frictionCombine: 0
+  bounceCombine: 0
 --- !u!1 &1967908604
 GameObject:
   m_ObjectHideFlags: 0
@@ -68260,7 +70015,7 @@ CapsuleCollider:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1969903571}
-  m_Material: {fileID: 562309902}
+  m_Material: {fileID: 1848048141}
   m_IncludeLayers:
     serializedVersion: 2
     m_Bits: 0
@@ -68335,7 +70090,7 @@ Transform:
   m_GameObject: {fileID: 1969903571}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 8, y: 78.15, z: 8}
+  m_LocalPosition: {x: -12.976109, y: 28.18134, z: 8}
   m_LocalScale: {x: 0.8, y: 0.8, z: 0.8}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -68537,7 +70292,7 @@ MonoBehaviour:
   m_spawnRuleStampsToggleAllState: 1
   m_drawPreview: 0
   m_previewRuleIds: 
-  m_maxWorldHeight: 60.90718
+  m_maxWorldHeight: 61.157185
   m_minWorldHeight: 0
   m_showSeaLevelinStampPreview: 1
   m_terrainGeneratorPanelUnfolded: 1
@@ -69777,6 +71532,30 @@ Transform:
   - {fileID: 567866450}
   m_Father: {fileID: 1625965842}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &2070947214
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cba17d399ab86974c8ef9551f6e8f8d4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  transformSettings:
+    translation: {x: 4.8807735, y: 0, z: -0.33202538}
+    scale: {x: 8.49985, y: 1, z: 8.49985}
+    rotation: {x: 0, y: 0, z: 0}
+    flipScaleX: 0
+    flipScaleY: 0
+    flipScaleZ: 0
+  domainSettings:
+    noiseTypeName: Perlin
+    fractalTypeName: Fbm
+    noiseTypeParams: 
+    fractalTypeParams: '{"warpOffsets":{"x":2.5,"y":1.399999976158142,"z":3.200000047683716,"w":2.700000047683716},"octavesMinMax":{"x":0.0,"y":16.0},"amplitudeMinMax":{"x":0.0,"y":1.0},"frequencyMinMax":{"x":0.0,"y":2.0},"lacunarityMinMax":{"x":0.0,"y":4.0},"persistenceMinMax":{"x":0.0,"y":1.0},"warpIterationsMinMax":{"x":0.0,"y":8.0},"warpStrengthMinMax":{"x":-2.0,"y":2.0},"octaves":8.0,"amplitude":0.5,"frequency":1.0,"persistence":0.5,"lacunarity":2.0,"warpIterations":1.0,"warpStrength":0.5,"warpEnabled":false,"warpExpanded":true}'
 --- !u!114 &2097949631
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -70233,7 +72012,7 @@ MonoBehaviour:
       m_imageMaskLocation: 1
       m_strength: 1
       m_seaLevel: 15
-      m_maxWorldHeight: 60.90718
+      m_maxWorldHeight: 61.157185
       m_minWorldHeight: 0
       m_xOffSet: 0
       m_zOffSet: 0
@@ -70499,7 +72278,7 @@ MonoBehaviour:
       m_imageMaskLocation: 1
       m_strength: 1
       m_seaLevel: 15
-      m_maxWorldHeight: 60.90718
+      m_maxWorldHeight: 61.157185
       m_minWorldHeight: 0
       m_xOffSet: 0
       m_zOffSet: 0
@@ -70765,7 +72544,7 @@ MonoBehaviour:
       m_imageMaskLocation: 1
       m_strength: 1
       m_seaLevel: 15
-      m_maxWorldHeight: 60.90718
+      m_maxWorldHeight: 61.157185
       m_minWorldHeight: 0
       m_xOffSet: 0
       m_zOffSet: 0
@@ -71031,7 +72810,7 @@ MonoBehaviour:
       m_imageMaskLocation: 1
       m_strength: 1
       m_seaLevel: 15
-      m_maxWorldHeight: 60.90718
+      m_maxWorldHeight: 61.157185
       m_minWorldHeight: 0
       m_xOffSet: 0
       m_zOffSet: 0
@@ -71285,7 +73064,7 @@ MonoBehaviour:
     m_imageMaskLocation: 0
     m_strength: 1
     m_seaLevel: 15
-    m_maxWorldHeight: 60.90718
+    m_maxWorldHeight: 61.157185
     m_minWorldHeight: 0
     m_xOffSet: 0
     m_zOffSet: 0
@@ -71479,7 +73258,7 @@ MonoBehaviour:
     m_imageMaskLocation: 0
     m_strength: 1
     m_seaLevel: 15
-    m_maxWorldHeight: 60.90718
+    m_maxWorldHeight: 61.157185
     m_minWorldHeight: 0
     m_xOffSet: 0
     m_zOffSet: 0
@@ -71673,7 +73452,7 @@ MonoBehaviour:
     m_imageMaskLocation: 0
     m_strength: 1
     m_seaLevel: 15
-    m_maxWorldHeight: 60.90718
+    m_maxWorldHeight: 61.157185
     m_minWorldHeight: 0
     m_xOffSet: 0
     m_zOffSet: 0

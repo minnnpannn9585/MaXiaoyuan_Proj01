@@ -40,20 +40,20 @@ MonoBehaviour:
     isWorldmap: 1
     recalculate: 0
     min: 0
-    max: 26.499445
+    max: 0
   m_bakedMaskCacheEntries:
-  - fileName: Terrain_0_0-20260828 - 103618_LayerGameObject_3584_12
+  - fileName: Terrain_0_0-20260828 - 103618_LayerGameObject_3584_2
     assetPath: Assets/Procedural Worlds/Packages - Install/Gaia/TerrainCollisionData/Terrain_0_0-20260828
-      - 103618/Terrain_0_0-20260828 - 103618_LayerGameObject_3584_12
+      - 103618/Terrain_0_0-20260828 - 103618_LayerGameObject_3584_2
     fullPath: C:/Users/33709/Documents/GitHub/MaXiaoyuan_Proj01/Assets/Procedural
       Worlds/Packages - Install/Gaia/TerrainCollisionData/Terrain_0_0-20260828 -
-      103618/Terrain_0_0-20260828 - 103618_LayerGameObject_3584_12
+      103618/Terrain_0_0-20260828 - 103618_LayerGameObject_3584_2
     texture: {fileID: 0}
-  - fileName: Terrain_0_0-20260828 - 103618_LayerTree_3584_5
+  - fileName: Terrain_0_0-20260828 - 103618_LayerTree_3584_-0.2
     assetPath: Assets/Procedural Worlds/Packages - Install/Gaia/TerrainCollisionData/Terrain_0_0-20260828
-      - 103618/Terrain_0_0-20260828 - 103618_LayerTree_3584_5
+      - 103618/Terrain_0_0-20260828 - 103618_LayerTree_3584_-0.2
     fullPath: C:/Users/33709/Documents/GitHub/MaXiaoyuan_Proj01/Assets/Procedural
       Worlds/Packages - Install/Gaia/TerrainCollisionData/Terrain_0_0-20260828 -
-      103618/Terrain_0_0-20260828 - 103618_LayerTree_3584_5
+      103618/Terrain_0_0-20260828 - 103618_LayerTree_3584_-0.2
     texture: {fileID: 0}
   m_worldBiomeMaskSettings: {fileID: 0}

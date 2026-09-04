@@ -12,6 +12,7 @@ internal static class HunterVisualInstaller
     private const string ForwardModelPath = "Assets/Animation/Stepping Forward.fbx";
     private const string BackwardModelPath = "Assets/Animation/Stepping Backward.fbx";
     private const string CrouchingModelPath = "Assets/Animation/Crouching Modified.fbx";
+    private const string CrouchingClipPath = "Assets/Animation/Crouching Modified InPlace.anim";
     private const string CrouchIdleModelPath = "Assets/Animation/Crouch Idle.fbx";
     private const string ControllerPath = "Assets/Animation/Hunter.controller";
     private const string VisualName = "HunterVisual";
@@ -53,7 +54,7 @@ internal static class HunterVisualInstaller
         GameObject forwardModel = AssetDatabase.LoadAssetAtPath<GameObject>(ForwardModelPath);
         AnimationClip forwardClip = LoadAnimationClip(ForwardModelPath);
         AnimationClip backwardClip = LoadAnimationClip(BackwardModelPath);
-        AnimationClip crouchingClip = LoadAnimationClip(CrouchingModelPath);
+        AnimationClip crouchingClip = LoadAnimationClip(CrouchingClipPath);
         AnimationClip crouchIdleClip = LoadAnimationClip(CrouchIdleModelPath);
         if (forwardModel == null ||
             forwardClip == null ||
@@ -69,9 +70,11 @@ internal static class HunterVisualInstaller
         SetClipLooping(BackwardModelPath, true);
         SetClipLooping(CrouchingModelPath, false);
         SetClipLooping(CrouchIdleModelPath, true);
+        LockClipRootMotion(CrouchingModelPath);
+        LockClipRootMotion(CrouchIdleModelPath);
         forwardClip = LoadAnimationClip(ForwardModelPath);
         backwardClip = LoadAnimationClip(BackwardModelPath);
-        crouchingClip = LoadAnimationClip(CrouchingModelPath);
+        crouchingClip = LoadAnimationClip(CrouchingClipPath);
         crouchIdleClip = LoadAnimationClip(CrouchIdleModelPath);
 
         AnimatorController controller = GetOrCreateController(
@@ -101,15 +104,9 @@ internal static class HunterVisualInstaller
             changed = true;
         }
 
-        if (!animator.applyRootMotion)
+        if (animator.applyRootMotion)
         {
-            animator.applyRootMotion = true;
-            changed = true;
-        }
-
-        if (animator.GetComponent<HunterPostureRootMotion>() == null)
-        {
-            animator.gameObject.AddComponent<HunterPostureRootMotion>();
+            animator.applyRootMotion = false;
             changed = true;
         }
 
@@ -168,12 +165,18 @@ internal static class HunterVisualInstaller
         Renderer[] renderers = visual.GetComponentsInChildren<Renderer>(true);
         if (hunterCollider != null && renderers.Length > 0)
         {
-            Bounds modelBounds = CombineBounds(renderers);
+            Physics.SyncTransforms();
+            Bounds modelBounds = TryGetBakedWorldBounds(visual, out Bounds bakedBounds)
+                ? bakedBounds
+                : CombineBounds(renderers);
             if (modelBounds.size.y > 0.001f)
             {
                 float scale = hunterCollider.bounds.size.y / modelBounds.size.y;
                 visual.transform.localScale *= scale;
-                modelBounds = CombineBounds(renderers);
+                Physics.SyncTransforms();
+                modelBounds = TryGetBakedWorldBounds(visual, out bakedBounds)
+                    ? bakedBounds
+                    : CombineBounds(renderers);
                 visual.transform.position += Vector3.up *
                     (hunterCollider.bounds.min.y - modelBounds.min.y);
             }
@@ -383,6 +386,47 @@ internal static class HunterVisualInstaller
         }
     }
 
+    private static void LockClipRootMotion(string assetPath)
+    {
+        ModelImporter importer = AssetImporter.GetAtPath(assetPath) as ModelImporter;
+        if (importer == null)
+        {
+            return;
+        }
+
+        ModelImporterClipAnimation[] clips = importer.clipAnimations;
+        if (clips == null || clips.Length == 0)
+        {
+            clips = importer.defaultClipAnimations;
+        }
+
+        bool changed = false;
+        foreach (ModelImporterClipAnimation clip in clips)
+        {
+            if (clip.lockRootHeightY &&
+                clip.lockRootPositionXZ &&
+                clip.lockRootRotation &&
+                clip.heightFromFeet &&
+                !clip.keepOriginalPositionY)
+            {
+                continue;
+            }
+
+            clip.lockRootHeightY = true;
+            clip.lockRootPositionXZ = true;
+            clip.lockRootRotation = true;
+            clip.heightFromFeet = true;
+            clip.keepOriginalPositionY = false;
+            changed = true;
+        }
+
+        if (changed)
+        {
+            importer.clipAnimations = clips;
+            importer.SaveAndReimport();
+        }
+    }
+
     private static Bounds CombineBounds(Renderer[] renderers)
     {
         Bounds bounds = renderers[0].bounds;
@@ -392,6 +436,40 @@ internal static class HunterVisualInstaller
         }
 
         return bounds;
+    }
+
+    private static bool TryGetBakedWorldBounds(
+        GameObject visual,
+        out Bounds worldBounds)
+    {
+        worldBounds = default;
+        bool initialized = false;
+        foreach (SkinnedMeshRenderer renderer in
+                 visual.GetComponentsInChildren<SkinnedMeshRenderer>(true))
+        {
+            Mesh bakedMesh = new Mesh();
+            renderer.BakeMesh(bakedMesh);
+            foreach (Vector3 vertex in bakedMesh.vertices)
+            {
+                // BakeMesh already applies the renderer's scale.
+                Vector3 worldVertex =
+                    renderer.transform.position +
+                    renderer.transform.rotation * vertex;
+                if (!initialized)
+                {
+                    worldBounds = new Bounds(worldVertex, Vector3.zero);
+                    initialized = true;
+                }
+                else
+                {
+                    worldBounds.Encapsulate(worldVertex);
+                }
+            }
+
+            UnityEngine.Object.DestroyImmediate(bakedMesh);
+        }
+
+        return initialized;
     }
 
     private static void SetLayerRecursively(GameObject root, int layer)
