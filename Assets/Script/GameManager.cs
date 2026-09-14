@@ -98,7 +98,7 @@ public class GameManager : MonoBehaviour
 
     private void DrawStatusPanel(float screenWidth)
     {
-        const float panelWidth = 350f;
+        const float panelWidth = 430f;
         const float panelHeight = 134f;
         Rect panel = new Rect(16f, 16f, panelWidth, panelHeight);
         GUI.Box(panel, string.Empty);
@@ -114,7 +114,7 @@ public class GameManager : MonoBehaviour
 
         GUI.Label(new Rect(30f, 72f, 260f, 22f), $"Hits: {playerHits}/{hitsToLose}    Hunter misses: {hunterMisses}/{missesToWin}");
         GUI.Label(new Rect(30f, 94f, 310f, 22f), "WASD Move   Double Space Toggle Flight");
-        GUI.Label(new Rect(30f, 114f, 310f, 22f), "Flight: Space Up   Shift Down   Esc Cursor");
+        GUI.Label(new Rect(30f, 114f, 400f, 22f), "Flight: Space Up   Shift Down   Esc Cursor   B Open/Close Backpack");
 
         if (player != null && player.IsStunned)
         {

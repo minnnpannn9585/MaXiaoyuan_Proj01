@@ -80,6 +80,11 @@ public class HunterMove : MonoBehaviour
         body = GetComponent<Rigidbody>();
         bodyCollider = GetComponent<Collider>();
         hunterAnimator = GetComponentInChildren<Animator>();
+        if (GetComponent<TakePhoto>() == null)
+        {
+            gameObject.AddComponent<TakePhoto>();
+        }
+
         body.useGravity = true;
         body.interpolation = RigidbodyInterpolation.Interpolate;
         body.collisionDetectionMode = CollisionDetectionMode.Continuous;
@@ -400,9 +405,16 @@ public class HunterMove : MonoBehaviour
             return;
         }
 
+        Vector3 fireDirection = direction.normalized;
+        TakePhoto takePhoto = GetComponent<TakePhoto>();
+        if (takePhoto != null)
+        {
+            takePhoto.Capture(origin, fireDirection);
+        }
+
         HunterBullet.Create(
             origin,
-            direction.normalized,
+            fireDirection,
             bulletSpeed,
             bulletGravity,
             bulletLifetime,

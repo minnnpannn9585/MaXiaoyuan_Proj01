@@ -90,7 +90,18 @@ public class ThirdPersonCamera : MonoBehaviour
     {
         if (Input.GetKeyDown(KeyCode.Escape))
         {
+            if (TakePhoto.IsBackpackOpen)
+            {
+                return;
+            }
+
             SetCursorCaptured(!cursorCaptured);
+        }
+
+        if (TakePhoto.IsBackpackOpen)
+        {
+            SetCursorCaptured(false);
+            return;
         }
 
         if (cursorCaptured && (GameManager.Instance == null || GameManager.Instance.IsRunning))
@@ -406,7 +417,7 @@ public class ThirdPersonCamera : MonoBehaviour
         }
     }
 
-    private void SetCursorCaptured(bool captured)
+    public void SetCursorCaptured(bool captured)
     {
         cursorCaptured = captured;
         Cursor.lockState = captured ? CursorLockMode.Locked : CursorLockMode.None;

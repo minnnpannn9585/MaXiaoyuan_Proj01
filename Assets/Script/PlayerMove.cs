@@ -154,7 +154,7 @@ public class PlayerMove : MonoBehaviour
             }
         }
 
-        if (!gameRunning || IsStunned)
+        if (!gameRunning || IsStunned || TakePhoto.IsBackpackOpen)
         {
             SlowHorizontalMovement();
             return;
@@ -208,7 +208,9 @@ public class PlayerMove : MonoBehaviour
 
     private bool CanAcceptInput()
     {
-        return !IsStunned && (GameManager.Instance == null || GameManager.Instance.IsRunning);
+        return !IsStunned &&
+               !TakePhoto.IsBackpackOpen &&
+               (GameManager.Instance == null || GameManager.Instance.IsRunning);
     }
 
     private void HandleFlightToggleInput()
