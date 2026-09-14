@@ -23,7 +23,7 @@ MonoBehaviour:
   m_terrainWidth: 1024
   m_terrainDepth: 1024
   m_terrainHeight: 1024
-  m_seaLevel: 15
+  m_seaLevel: 9
   m_spawnDensity: 1
   m_isLocked: 0
   m_previewImageBytes: 
@@ -35,7 +35,7 @@ MonoBehaviour:
     isWorldmap: 0
     recalculate: 0
     min: 0
-    max: 61.157185
+    max: 60.04779
   - guid: Worldmap
     isWorldmap: 1
     recalculate: 0
