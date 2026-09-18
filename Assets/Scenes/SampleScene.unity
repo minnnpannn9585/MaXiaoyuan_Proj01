@@ -1418,7 +1418,7 @@ MonoBehaviour:
   m_spawnRuleStampsToggleAllState: 1
   m_drawPreview: 0
   m_previewRuleIds: 0000000008000000
-  m_maxWorldHeight: 61.157185
+  m_maxWorldHeight: 60.04779
   m_minWorldHeight: 0
   m_showSeaLevelinStampPreview: 1
   m_terrainGeneratorPanelUnfolded: 1
@@ -10663,7 +10663,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   walkSpeed: 1.5
-  flightSpeed: 4
+  flightSpeed: 13
   flightRiseSpeed: 3
   flightDescendSpeed: 4
   airControl: 3
@@ -11810,7 +11810,7 @@ MonoBehaviour:
       m_warpIterations: 0.12008093
       m_warpStrength: 0.44570363
       m_warpOffset: {x: -23.622274, y: -740.6602, z: 295.5401, w: 0}
-    m_noiseSettings: {fileID: 724092701}
+    m_noiseSettings: {fileID: 804664815}
     m_noiseToolSettings:
       worldHeightRemap: {x: 0, y: 0}
       coordSpace: 0
@@ -15792,30 +15792,6 @@ MonoBehaviour:
   m_stampJitter: 0.25
   m_stampWidth: 100
   m_stampHeight: 100
---- !u!114 &724092701
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: cba17d399ab86974c8ef9551f6e8f8d4, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  transformSettings:
-    translation: {x: 1389.8464, y: 146.64413, z: 1237.2158}
-    scale: {x: 5.1686354, y: 1, z: 5.1686354}
-    rotation: {x: 0, y: 0, z: 0}
-    flipScaleX: 0
-    flipScaleY: 0
-    flipScaleZ: 0
-  domainSettings:
-    noiseTypeName: Perlin
-    fractalTypeName: Fbm
-    noiseTypeParams: 
-    fractalTypeParams: '{"warpOffsets":{"x":-23.62227439880371,"y":-740.6602172851563,"z":295.54010009765627,"w":0.0},"octavesMinMax":{"x":0.0,"y":16.0},"amplitudeMinMax":{"x":0.0,"y":1.0},"frequencyMinMax":{"x":0.0,"y":2.0},"lacunarityMinMax":{"x":0.0,"y":4.0},"persistenceMinMax":{"x":0.0,"y":1.0},"warpIterationsMinMax":{"x":0.0,"y":8.0},"warpStrengthMinMax":{"x":-2.0,"y":2.0},"octaves":8.0,"amplitude":0.5978570580482483,"frequency":1.0,"persistence":0.5,"lacunarity":1.2288411855697632,"warpIterations":0.12008093297481537,"warpStrength":0.4457036256790161,"warpEnabled":true,"warpExpanded":true}'
 --- !u!1 &736031389
 GameObject:
   m_ObjectHideFlags: 0
@@ -16856,6 +16832,30 @@ MonoBehaviour:
   m_impostorLoadRangeActiveColor: {r: 0, g: 1, b: 0, a: 1}
   m_regularLoadRangeInActiveColor: {r: 0, g: 0, b: 0, a: 1}
   m_impostorLoadRangeInActiveColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+--- !u!114 &804664815
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cba17d399ab86974c8ef9551f6e8f8d4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  transformSettings:
+    translation: {x: 1389.8464, y: 146.64413, z: 1237.2158}
+    scale: {x: 5.1686354, y: 1, z: 5.1686354}
+    rotation: {x: 0, y: 0, z: 0}
+    flipScaleX: 0
+    flipScaleY: 0
+    flipScaleZ: 0
+  domainSettings:
+    noiseTypeName: Perlin
+    fractalTypeName: Fbm
+    noiseTypeParams: 
+    fractalTypeParams: '{"warpOffsets":{"x":-23.62227439880371,"y":-740.6602172851563,"z":295.54010009765627,"w":0.0},"octavesMinMax":{"x":0.0,"y":16.0},"amplitudeMinMax":{"x":0.0,"y":1.0},"frequencyMinMax":{"x":0.0,"y":2.0},"lacunarityMinMax":{"x":0.0,"y":4.0},"persistenceMinMax":{"x":0.0,"y":1.0},"warpIterationsMinMax":{"x":0.0,"y":8.0},"warpStrengthMinMax":{"x":-2.0,"y":2.0},"octaves":8.0,"amplitude":0.5978570580482483,"frequency":1.0,"persistence":0.5,"lacunarity":1.2288411855697632,"warpIterations":0.12008093297481537,"warpStrength":0.4457036256790161,"warpEnabled":true,"warpExpanded":true}'
 --- !u!1 &811086447
 GameObject:
   m_ObjectHideFlags: 0
@@ -25881,7 +25881,7 @@ MonoBehaviour:
       m_imageMaskLocation: 1
       m_strength: 1
       m_seaLevel: 9
-      m_maxWorldHeight: 61.157185
+      m_maxWorldHeight: 60.04779
       m_minWorldHeight: 0
       m_xOffSet: 0
       m_zOffSet: 0
@@ -26093,7 +26093,7 @@ MonoBehaviour:
       m_imageMaskLocation: 1
       m_strength: 1
       m_seaLevel: 9
-      m_maxWorldHeight: 61.157185
+      m_maxWorldHeight: 60.04779
       m_minWorldHeight: 0
       m_xOffSet: 0
       m_zOffSet: 0
@@ -26287,7 +26287,7 @@ MonoBehaviour:
       m_imageMaskLocation: 1
       m_strength: 1
       m_seaLevel: 9
-      m_maxWorldHeight: 61.157185
+      m_maxWorldHeight: 60.04779
       m_minWorldHeight: 0
       m_xOffSet: 0
       m_zOffSet: 0
@@ -26481,7 +26481,7 @@ MonoBehaviour:
       m_imageMaskLocation: 1
       m_strength: 1
       m_seaLevel: 9
-      m_maxWorldHeight: 61.157185
+      m_maxWorldHeight: 60.04779
       m_minWorldHeight: 0
       m_xOffSet: 0
       m_zOffSet: 0
@@ -26747,7 +26747,7 @@ MonoBehaviour:
       m_imageMaskLocation: 1
       m_strength: 1
       m_seaLevel: 9
-      m_maxWorldHeight: 61.157185
+      m_maxWorldHeight: 60.04779
       m_minWorldHeight: 0
       m_xOffSet: 0
       m_zOffSet: 0
@@ -26959,7 +26959,7 @@ MonoBehaviour:
       m_imageMaskLocation: 1
       m_strength: 1
       m_seaLevel: 9
-      m_maxWorldHeight: 61.157185
+      m_maxWorldHeight: 60.04779
       m_minWorldHeight: 0
       m_xOffSet: 0
       m_zOffSet: 0
@@ -27171,7 +27171,7 @@ MonoBehaviour:
       m_imageMaskLocation: 1
       m_strength: 1
       m_seaLevel: 9
-      m_maxWorldHeight: 61.157185
+      m_maxWorldHeight: 60.04779
       m_minWorldHeight: 0
       m_xOffSet: 0
       m_zOffSet: 0
@@ -27437,7 +27437,7 @@ MonoBehaviour:
       m_imageMaskLocation: 1
       m_strength: 1
       m_seaLevel: 9
-      m_maxWorldHeight: 61.157185
+      m_maxWorldHeight: 60.04779
       m_minWorldHeight: 0
       m_xOffSet: 0
       m_zOffSet: 0
@@ -27649,7 +27649,7 @@ MonoBehaviour:
       m_imageMaskLocation: 1
       m_strength: 1
       m_seaLevel: 9
-      m_maxWorldHeight: 61.157185
+      m_maxWorldHeight: 60.04779
       m_minWorldHeight: 0
       m_xOffSet: 0
       m_zOffSet: 0
@@ -27915,7 +27915,7 @@ MonoBehaviour:
       m_imageMaskLocation: 1
       m_strength: 1
       m_seaLevel: 9
-      m_maxWorldHeight: 61.157185
+      m_maxWorldHeight: 60.04779
       m_minWorldHeight: 0
       m_xOffSet: 0
       m_zOffSet: 0
@@ -28127,7 +28127,7 @@ MonoBehaviour:
       m_imageMaskLocation: 1
       m_strength: 1
       m_seaLevel: 9
-      m_maxWorldHeight: 61.157185
+      m_maxWorldHeight: 60.04779
       m_minWorldHeight: 0
       m_xOffSet: 0
       m_zOffSet: 0
@@ -28393,7 +28393,7 @@ MonoBehaviour:
       m_imageMaskLocation: 1
       m_strength: 1
       m_seaLevel: 9
-      m_maxWorldHeight: 61.157185
+      m_maxWorldHeight: 60.04779
       m_minWorldHeight: 0
       m_xOffSet: 0
       m_zOffSet: 0
@@ -28587,7 +28587,7 @@ MonoBehaviour:
       m_imageMaskLocation: 1
       m_strength: 1
       m_seaLevel: 9
-      m_maxWorldHeight: 61.157185
+      m_maxWorldHeight: 60.04779
       m_minWorldHeight: 0
       m_xOffSet: 0
       m_zOffSet: 0
@@ -28853,7 +28853,7 @@ MonoBehaviour:
       m_imageMaskLocation: 1
       m_strength: 1
       m_seaLevel: 9
-      m_maxWorldHeight: 61.157185
+      m_maxWorldHeight: 60.04779
       m_minWorldHeight: 0
       m_xOffSet: 0
       m_zOffSet: 0
@@ -29047,7 +29047,7 @@ MonoBehaviour:
       m_imageMaskLocation: 1
       m_strength: 1
       m_seaLevel: 9
-      m_maxWorldHeight: 61.157185
+      m_maxWorldHeight: 60.04779
       m_minWorldHeight: 0
       m_xOffSet: 0
       m_zOffSet: 0
@@ -29295,7 +29295,7 @@ MonoBehaviour:
       m_imageMaskLocation: 1
       m_strength: 1
       m_seaLevel: 9
-      m_maxWorldHeight: 61.157185
+      m_maxWorldHeight: 60.04779
       m_minWorldHeight: 0
       m_xOffSet: 0
       m_zOffSet: 0
@@ -29489,7 +29489,7 @@ MonoBehaviour:
       m_imageMaskLocation: 1
       m_strength: 1
       m_seaLevel: 9
-      m_maxWorldHeight: 61.157185
+      m_maxWorldHeight: 60.04779
       m_minWorldHeight: 0
       m_xOffSet: 0
       m_zOffSet: 0
@@ -29755,7 +29755,7 @@ MonoBehaviour:
       m_imageMaskLocation: 1
       m_strength: 1
       m_seaLevel: 9
-      m_maxWorldHeight: 61.157185
+      m_maxWorldHeight: 60.04779
       m_minWorldHeight: 0
       m_xOffSet: 0
       m_zOffSet: 0
@@ -29967,7 +29967,7 @@ MonoBehaviour:
       m_imageMaskLocation: 1
       m_strength: 1
       m_seaLevel: 9
-      m_maxWorldHeight: 61.157185
+      m_maxWorldHeight: 60.04779
       m_minWorldHeight: 0
       m_xOffSet: 0
       m_zOffSet: 0
@@ -30215,7 +30215,7 @@ MonoBehaviour:
       m_imageMaskLocation: 1
       m_strength: 1
       m_seaLevel: 9
-      m_maxWorldHeight: 61.157185
+      m_maxWorldHeight: 60.04779
       m_minWorldHeight: 0
       m_xOffSet: 0
       m_zOffSet: 0
@@ -30427,7 +30427,7 @@ MonoBehaviour:
       m_imageMaskLocation: 1
       m_strength: 1
       m_seaLevel: 9
-      m_maxWorldHeight: 61.157185
+      m_maxWorldHeight: 60.04779
       m_minWorldHeight: 0
       m_xOffSet: 0
       m_zOffSet: 0
@@ -30621,7 +30621,7 @@ MonoBehaviour:
       m_imageMaskLocation: 1
       m_strength: 1
       m_seaLevel: 9
-      m_maxWorldHeight: 61.157185
+      m_maxWorldHeight: 60.04779
       m_minWorldHeight: 0
       m_xOffSet: 0
       m_zOffSet: 0
@@ -30815,7 +30815,7 @@ MonoBehaviour:
       m_imageMaskLocation: 1
       m_strength: 1
       m_seaLevel: 9
-      m_maxWorldHeight: 61.157185
+      m_maxWorldHeight: 60.04779
       m_minWorldHeight: 0
       m_xOffSet: 0
       m_zOffSet: 0
@@ -31069,7 +31069,7 @@ MonoBehaviour:
     m_imageMaskLocation: 0
     m_strength: 1
     m_seaLevel: 9
-    m_maxWorldHeight: 61.157185
+    m_maxWorldHeight: 60.04779
     m_minWorldHeight: 0
     m_xOffSet: 0
     m_zOffSet: 0
@@ -31263,7 +31263,7 @@ MonoBehaviour:
     m_imageMaskLocation: 0
     m_strength: 1
     m_seaLevel: 9
-    m_maxWorldHeight: 61.157185
+    m_maxWorldHeight: 60.04779
     m_minWorldHeight: 0
     m_xOffSet: 0
     m_zOffSet: 0
@@ -31489,7 +31489,7 @@ MonoBehaviour:
     m_imageMaskLocation: 0
     m_strength: 1
     m_seaLevel: 9
-    m_maxWorldHeight: 61.157185
+    m_maxWorldHeight: 60.04779
     m_minWorldHeight: 0
     m_xOffSet: 0
     m_zOffSet: 0
@@ -69902,8 +69902,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2b5c211648e081d48b242afeaa2edc28, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  hitsToLose: 3
-  missesToWin: 10
+  clearPhotosToLose: 3
+  failedPhotosToWin: 10
 --- !u!4 &1878624748
 Transform:
   m_ObjectHideFlags: 0
@@ -70791,7 +70791,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!136 &1969903572
 CapsuleCollider:
   m_ObjectHideFlags: 0
@@ -70949,9 +70949,12 @@ MonoBehaviour:
   fastTargetFollowPenalty: 0.55
   lockedWarningDuration: 0.45
   shotCooldown: 0.9
-  bulletSpeed: 60
-  bulletGravity: 0
-  bulletLifetime: 4.5
+  shutterSpeed: 640
+  photoFocalLength: 200
+  sensorPixelPitchMicrometers: 3.72
+  motionBlurScale: 1
+  sharpMtf50: 0.35
+  minimumMtf50Retention: 0.8
 --- !u!1 &1990631269
 GameObject:
   m_ObjectHideFlags: 0

@@ -12,16 +12,16 @@ public class GameManager : MonoBehaviour
 
     public static GameManager Instance { get; private set; }
 
-    [SerializeField] private int hitsToLose = 3;
-    [SerializeField] private int missesToWin = 10;
+    [SerializeField] private int clearPhotosToLose = 3;
+    [SerializeField] private int failedPhotosToWin = 10;
 
     private GameState state = GameState.Running;
-    private int playerHits;
-    private int hunterMisses;
+    private int clearPlayerPhotos;
+    private int failedPlayerPhotos;
 
     public bool IsRunning => state == GameState.Running;
-    public int PlayerHits => playerHits;
-    public int HunterMisses => hunterMisses;
+    public int ClearPlayerPhotos => clearPlayerPhotos;
+    public int FailedPlayerPhotos => failedPlayerPhotos;
 
     private void Awake()
     {
@@ -51,29 +51,29 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    public void RegisterPlayerHit()
+    public void RegisterClearPlayerPhoto()
     {
         if (!IsRunning)
         {
             return;
         }
 
-        playerHits++;
-        if (playerHits >= hitsToLose)
+        clearPlayerPhotos++;
+        if (clearPlayerPhotos >= clearPhotosToLose)
         {
             state = GameState.Lost;
         }
     }
 
-    public void RegisterHunterMiss()
+    public void RegisterFailedPlayerPhoto()
     {
         if (!IsRunning)
         {
             return;
         }
 
-        hunterMisses++;
-        if (hunterMisses >= missesToWin)
+        failedPlayerPhotos++;
+        if (failedPlayerPhotos >= failedPhotosToWin)
         {
             state = GameState.Won;
         }
@@ -112,7 +112,9 @@ public class GameManager : MonoBehaviour
         GUI.Box(new Rect(32f, 51f, 256f * stamina, 14f), string.Empty);
         GUI.color = previousColor;
 
-        GUI.Label(new Rect(30f, 72f, 260f, 22f), $"Hits: {playerHits}/{hitsToLose}    Hunter misses: {hunterMisses}/{missesToWin}");
+        GUI.Label(
+            new Rect(30f, 72f, 380f, 22f),
+            $"Clear photos: {clearPlayerPhotos}/{clearPhotosToLose}    Failed photos: {failedPlayerPhotos}/{failedPhotosToWin}");
         GUI.Label(new Rect(30f, 94f, 310f, 22f), "WASD Move   Double Space Toggle Flight");
         GUI.Label(new Rect(30f, 114f, 400f, 22f), "Flight: Space Up   Shift Down   Esc Cursor   B Open/Close Backpack");
 
@@ -139,7 +141,9 @@ public class GameManager : MonoBehaviour
             fontSize = 18
         };
 
-        string title = state == GameState.Won ? "YOU ESCAPED!" : "THE HUNTER GOT YOU";
+        string title = state == GameState.Won
+            ? "YOU ESCAPED!"
+            : "THE HUNTER PHOTOGRAPHED YOU";
         GUI.Label(new Rect(resultRect.x, resultRect.y + 18f, resultRect.width, 44f), title, titleStyle);
         GUI.Label(new Rect(resultRect.x, resultRect.y + 78f, resultRect.width, 34f), "Press R to restart", hintStyle);
     }

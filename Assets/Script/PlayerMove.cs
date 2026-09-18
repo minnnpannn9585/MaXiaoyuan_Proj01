@@ -198,14 +198,6 @@ public class PlayerMove : MonoBehaviour
         }
     }
 
-    public void TakeHit()
-    {
-        if (GameManager.Instance != null && GameManager.Instance.IsRunning)
-        {
-            GameManager.Instance.RegisterPlayerHit();
-        }
-    }
-
     private bool CanAcceptInput()
     {
         return !IsStunned &&

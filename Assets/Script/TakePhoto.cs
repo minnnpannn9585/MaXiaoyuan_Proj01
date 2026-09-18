@@ -14,12 +14,23 @@ public class TakePhoto : MonoBehaviour
     [SerializeField] private float cameraForwardOffset = 0.18f;
     [SerializeField] private int maxStoredPhotos = 30;
 
+    private const float FullFrameSensorWidthMillimeters = 36f;
+    private const float FullFrameSensorHeightMillimeters = 24f;
+    private const int MinimumExposureSamples = 2;
+    private const int MaximumExposureSamples = 24;
+    private const float BlurPixelsPerSample = 2f;
+
     private readonly List<Texture2D> photos = new List<Texture2D>();
+    private readonly List<bool> photoAccepted = new List<bool>();
+    private readonly List<bool> photoCapturedPlayers = new List<bool>();
+    private readonly List<float> photoMtf50Retentions = new List<float>();
+    private readonly List<float> photoBlurLengths = new List<float>();
     private readonly List<bool> hunterRendererStates = new List<bool>();
     private readonly List<Renderer> hunterRenderers = new List<Renderer>();
 
     private Camera photoCamera;
     private RenderTexture photoTarget;
+    private Texture2D exposureReadback;
     private bool backpackOpen;
     private int selectedPhotoIndex = -1;
     private int backpackPage;
@@ -54,6 +65,11 @@ public class TakePhoto : MonoBehaviour
             Destroy(photoCamera.gameObject);
         }
 
+        if (exposureReadback != null)
+        {
+            Destroy(exposureReadback);
+        }
+
         for (int i = 0; i < photos.Count; i++)
         {
             if (photos[i] != null)
@@ -63,6 +79,10 @@ public class TakePhoto : MonoBehaviour
         }
 
         photos.Clear();
+        photoAccepted.Clear();
+        photoCapturedPlayers.Clear();
+        photoMtf50Retentions.Clear();
+        photoBlurLengths.Clear();
     }
 
     private void Update()
@@ -78,20 +98,56 @@ public class TakePhoto : MonoBehaviour
         }
     }
 
-    public void Capture(Vector3 origin, Vector3 direction)
+    public bool Capture(
+        Vector3 origin,
+        Vector3 direction,
+        Transform subject,
+        Vector3 subjectVelocity,
+        float shutterSpeed,
+        float focalLengthMillimeters,
+        float sensorPixelPitchMicrometers,
+        float motionBlurScale,
+        Vector3 cameraLinearVelocity,
+        Vector3 cameraAngularVelocity,
+        float sharpMtf50,
+        float minimumMtf50Retention)
     {
         if (direction.sqrMagnitude < 0.0001f)
         {
-            return;
+            return false;
         }
 
         EnsurePhotoCamera();
-        ConfigurePhotoCameraFromMain();
+        ConfigurePhotoCameraFromMain(focalLengthMillimeters);
 
         Vector3 lookDirection = direction.normalized;
         photoCamera.transform.SetPositionAndRotation(
             origin + lookDirection * cameraForwardOffset,
             Quaternion.LookRotation(lookDirection, Vector3.up));
+
+        Vector3 cameraPosition = photoCamera.transform.position;
+        Quaternion cameraRotation = photoCamera.transform.rotation;
+        Vector3 subjectPosition = subject == null ? Vector3.zero : subject.position;
+        PhotoBlurPhysics.Solution blurSolution =
+            PhotoBlurPhysics.Solve(
+                cameraPosition,
+                cameraRotation,
+                cameraLinearVelocity,
+                cameraAngularVelocity,
+                subjectPosition,
+                subjectVelocity,
+                focalLengthMillimeters,
+                shutterSpeed,
+                sensorPixelPitchMicrometers,
+                GetEffectiveSensorHeightMillimeters(),
+                photoHeight,
+                motionBlurScale);
+        int sampleCount = blurSolution.SamplingBlurLengthPixels > 0.01f
+            ? CalculateExposureSampleCount(
+                blurSolution.SamplingBlurLengthPixels)
+            : 1;
+        float subjectImageTravelPixels =
+            blurSolution.BlurLengthPixels;
 
         HideHunterFromCapture();
         RenderTexture previousActive = RenderTexture.active;
@@ -99,20 +155,65 @@ public class TakePhoto : MonoBehaviour
         try
         {
             photoCamera.targetTexture = photoTarget;
-            photoCamera.Render();
+            EnsureExposureReadback();
 
-            RenderTexture.active = photoTarget;
-            photo = new Texture2D(photoWidth, photoHeight, TextureFormat.RGB24, false)
+            int pixelCount = photoWidth * photoHeight;
+            int[] red = new int[pixelCount];
+            int[] green = new int[pixelCount];
+            int[] blue = new int[pixelCount];
+
+            for (int sample = 0; sample < sampleCount; sample++)
             {
-                name = $"HunterPhoto_{photos.Count + 1}",
-                filterMode = FilterMode.Bilinear,
-                wrapMode = TextureWrapMode.Clamp
-            };
-            photo.ReadPixels(new Rect(0f, 0f, photoWidth, photoHeight), 0, 0);
-            photo.Apply(false, false);
+                float exposurePosition = sampleCount == 1
+                    ? 0f
+                    : sample / (sampleCount - 1f) - 0.5f;
+                float sampleTime =
+                    exposurePosition *
+                    blurSolution.ExposureSeconds;
+                float renderedSampleTime =
+                    sampleTime *
+                    blurSolution.TrajectoryScale;
+
+                photoCamera.transform.SetPositionAndRotation(
+                    cameraPosition +
+                    cameraLinearVelocity * renderedSampleTime,
+                    PhotoBlurPhysics.IntegrateAngularVelocity(
+                        cameraRotation,
+                        cameraAngularVelocity,
+                        renderedSampleTime));
+
+                if (subject != null)
+                {
+                    subject.position =
+                        subjectPosition +
+                        subjectVelocity * renderedSampleTime;
+                }
+
+                photoCamera.Render();
+                RenderTexture.active = photoTarget;
+                exposureReadback.ReadPixels(
+                    new Rect(0f, 0f, photoWidth, photoHeight),
+                    0,
+                    0,
+                    false);
+                exposureReadback.Apply(false, false);
+                AccumulateExposure(
+                    exposureReadback.GetPixels32(),
+                    red,
+                    green,
+                    blue);
+            }
+
+            photo = CreateExposurePhoto(red, green, blue, sampleCount);
         }
         finally
         {
+            if (subject != null)
+            {
+                subject.position = subjectPosition;
+            }
+
+            photoCamera.transform.SetPositionAndRotation(cameraPosition, cameraRotation);
             RenderTexture.active = previousActive;
             photoCamera.targetTexture = null;
             RestoreHunterAfterCapture();
@@ -120,20 +221,256 @@ public class TakePhoto : MonoBehaviour
 
         if (photo == null)
         {
+            return false;
+        }
+
+        bool capturedPlayer = IsSubjectVisibleInPhoto(subject);
+        float mtf50Retention = CalculateMtf50Retention(
+            subjectImageTravelPixels,
+            sharpMtf50);
+        bool successfulPhoto =
+            capturedPlayer &&
+            mtf50Retention >= minimumMtf50Retention;
+        StorePhoto(
+            photo,
+            successfulPhoto,
+            capturedPlayer,
+            mtf50Retention,
+            subjectImageTravelPixels);
+        lastCaptureTime = Time.unscaledTime;
+        return successfulPhoto;
+    }
+
+    private bool IsSubjectVisibleInPhoto(Transform subject)
+    {
+        if (subject == null)
+        {
+            return false;
+        }
+
+        Plane[] frustumPlanes = GeometryUtility.CalculateFrustumPlanes(photoCamera);
+        Renderer[] renderers = subject.GetComponentsInChildren<Renderer>(true);
+        foreach (Renderer subjectRenderer in renderers)
+        {
+            if (subjectRenderer == null ||
+                !subjectRenderer.enabled ||
+                !GeometryUtility.TestPlanesAABB(
+                    frustumPlanes,
+                    subjectRenderer.bounds))
+            {
+                continue;
+            }
+
+            Bounds bounds = subjectRenderer.bounds;
+            Vector3 center = bounds.center;
+            Vector3 extents = bounds.extents * 0.85f;
+            Vector3[] visibilityPoints =
+            {
+                center,
+                center + Vector3.up * extents.y,
+                center - Vector3.up * extents.y,
+                center + Vector3.right * extents.x,
+                center - Vector3.right * extents.x,
+                center + Vector3.forward * extents.z,
+                center - Vector3.forward * extents.z
+            };
+
+            foreach (Vector3 point in visibilityPoints)
+            {
+                Vector3 viewport = photoCamera.WorldToViewportPoint(point);
+                if (viewport.z <= photoCamera.nearClipPlane ||
+                    viewport.x < 0f ||
+                    viewport.x > 1f ||
+                    viewport.y < 0f ||
+                    viewport.y > 1f)
+                {
+                    continue;
+                }
+
+                if (HasClearPhotoLine(point, subject))
+                {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    private bool HasClearPhotoLine(Vector3 point, Transform subject)
+    {
+        Vector3 direction = point - photoCamera.transform.position;
+        float distance = direction.magnitude;
+        if (distance <= photoCamera.nearClipPlane)
+        {
+            return true;
+        }
+
+        RaycastHit[] hits = Physics.RaycastAll(
+            photoCamera.transform.position,
+            direction / distance,
+            distance,
+            Physics.AllLayers,
+            QueryTriggerInteraction.Ignore);
+        foreach (RaycastHit hit in hits)
+        {
+            if (hit.collider == null ||
+                hit.transform == transform ||
+                hit.transform.IsChildOf(transform) ||
+                hit.transform == subject ||
+                hit.transform.IsChildOf(subject))
+            {
+                continue;
+            }
+
+            return false;
+        }
+
+        return true;
+    }
+
+    private static float CalculateMtf50Retention(
+        float blurLengthPixels,
+        float sharpMtf50)
+    {
+        float sharpFrequency = Mathf.Clamp(sharpMtf50, 0.001f, 0.5f);
+        if (blurLengthPixels <= 0.001f)
+        {
+            return 1f;
+        }
+
+        float lowFrequency = 0f;
+        float highFrequency = sharpFrequency;
+        for (int iteration = 0; iteration < 24; iteration++)
+        {
+            float frequency = (lowFrequency + highFrequency) * 0.5f;
+            float normalizedFrequency = frequency / sharpFrequency;
+            float staticMtf = Mathf.Exp(
+                -Mathf.Log(2f) *
+                normalizedFrequency *
+                normalizedFrequency);
+            float motionArgument =
+                Mathf.PI * frequency * blurLengthPixels;
+            float motionMtf = Mathf.Abs(
+                Mathf.Sin(motionArgument) /
+                Mathf.Max(0.000001f, motionArgument));
+            float totalMtf = staticMtf * motionMtf;
+
+            if (totalMtf > 0.5f)
+            {
+                lowFrequency = frequency;
+            }
+            else
+            {
+                highFrequency = frequency;
+            }
+        }
+
+        float blurredMtf50 = (lowFrequency + highFrequency) * 0.5f;
+        return Mathf.Clamp01(blurredMtf50 / sharpFrequency);
+    }
+
+    private void EnsureExposureReadback()
+    {
+        if (exposureReadback != null &&
+            exposureReadback.width == photoWidth &&
+            exposureReadback.height == photoHeight)
+        {
             return;
         }
 
-        StorePhoto(photo);
-        lastCaptureTime = Time.unscaledTime;
+        if (exposureReadback != null)
+        {
+            Destroy(exposureReadback);
+        }
+
+        exposureReadback = new Texture2D(
+            photoWidth,
+            photoHeight,
+            TextureFormat.RGB24,
+            false)
+        {
+            name = "HunterExposureReadback",
+            filterMode = FilterMode.Bilinear,
+            wrapMode = TextureWrapMode.Clamp
+        };
     }
 
-    private void StorePhoto(Texture2D photo)
+    private static int CalculateExposureSampleCount(float blurLengthPixels)
+    {
+        int requiredSamples =
+            Mathf.CeilToInt(blurLengthPixels / BlurPixelsPerSample) + 1;
+        return Mathf.Clamp(
+            requiredSamples,
+            MinimumExposureSamples,
+            MaximumExposureSamples);
+    }
+
+    private static void AccumulateExposure(
+        Color32[] pixels,
+        int[] red,
+        int[] green,
+        int[] blue)
+    {
+        for (int i = 0; i < pixels.Length; i++)
+        {
+            red[i] += pixels[i].r;
+            green[i] += pixels[i].g;
+            blue[i] += pixels[i].b;
+        }
+    }
+
+    private Texture2D CreateExposurePhoto(
+        int[] red,
+        int[] green,
+        int[] blue,
+        int sampleCount)
+    {
+        Color32[] averagedPixels = new Color32[red.Length];
+        for (int i = 0; i < averagedPixels.Length; i++)
+        {
+            averagedPixels[i] = new Color32(
+                (byte)(red[i] / sampleCount),
+                (byte)(green[i] / sampleCount),
+                (byte)(blue[i] / sampleCount),
+                byte.MaxValue);
+        }
+
+        Texture2D photo = new Texture2D(
+            photoWidth,
+            photoHeight,
+            TextureFormat.RGB24,
+            false)
+        {
+            name = $"HunterPhoto_{photos.Count + 1}",
+            filterMode = FilterMode.Bilinear,
+            wrapMode = TextureWrapMode.Clamp
+        };
+        photo.SetPixels32(averagedPixels);
+        photo.Apply(false, false);
+        return photo;
+    }
+
+    private void StorePhoto(
+        Texture2D photo,
+        bool accepted,
+        bool capturedPlayer,
+        float mtf50Retention,
+        float blurLengthPixels)
     {
         photos.Add(photo);
+        photoAccepted.Add(accepted);
+        photoCapturedPlayers.Add(capturedPlayer);
+        photoMtf50Retentions.Add(mtf50Retention);
+        photoBlurLengths.Add(blurLengthPixels);
         while (photos.Count > maxStoredPhotos)
         {
             Texture2D oldest = photos[0];
             photos.RemoveAt(0);
+            photoAccepted.RemoveAt(0);
+            photoCapturedPlayers.RemoveAt(0);
+            photoMtf50Retentions.RemoveAt(0);
+            photoBlurLengths.RemoveAt(0);
             Destroy(oldest);
             if (selectedPhotoIndex >= 0)
             {
@@ -213,12 +550,28 @@ public class TakePhoto : MonoBehaviour
         photoCamera.targetTexture = null;
     }
 
-    private void ConfigurePhotoCameraFromMain()
+    private float GetEffectiveSensorHeightMillimeters()
     {
+        float outputAspect = photoWidth / (float)photoHeight;
+        float fullFrameAspect =
+            FullFrameSensorWidthMillimeters /
+            FullFrameSensorHeightMillimeters;
+        return outputAspect >= fullFrameAspect
+            ? FullFrameSensorWidthMillimeters / outputAspect
+            : FullFrameSensorHeightMillimeters;
+    }
+
+    private void ConfigurePhotoCameraFromMain(float focalLengthMillimeters)
+    {
+        float sensorHeightMillimeters =
+            GetEffectiveSensorHeightMillimeters();
+        photoCamera.fieldOfView = Camera.FocalLengthToFieldOfView(
+            Mathf.Max(1f, focalLengthMillimeters),
+            sensorHeightMillimeters);
+
         Camera mainCamera = Camera.main;
         if (mainCamera == null)
         {
-            photoCamera.fieldOfView = photoFieldOfView;
             return;
         }
 
@@ -227,7 +580,6 @@ public class TakePhoto : MonoBehaviour
         photoCamera.clearFlags = mainCamera.clearFlags;
         photoCamera.backgroundColor = mainCamera.backgroundColor;
         photoCamera.cullingMask = mainCamera.cullingMask;
-        photoCamera.fieldOfView = photoFieldOfView;
         photoCamera.aspect = photoWidth / (float)photoHeight;
 
         UniversalAdditionalCameraData mainData = mainCamera.GetUniversalAdditionalCameraData();
@@ -335,7 +687,7 @@ public class TakePhoto : MonoBehaviour
             ScaleMode.ScaleToFit);
         GUI.Label(
             new Rect(toastRect.x + 8f, toastRect.yMax - 24f, toastRect.width - 16f, 20f),
-            "Photo saved to backpack");
+            GetPhotoResultLabel(photos.Count - 1));
     }
 
     private void DrawBackpack(float screenWidth, float screenHeight)
@@ -407,7 +759,7 @@ public class TakePhoto : MonoBehaviour
             GUI.DrawTexture(cell, photos[photoIndex], ScaleMode.ScaleToFit);
             GUI.Label(
                 new Rect(cell.x, cell.yMax + 2f, cell.width, 20f),
-                $"Photo {photoIndex + 1}");
+                $"Photo {photoIndex + 1}  {GetPhotoResultLabel(photoIndex)}");
         }
 
         if (pageCount > 1)
@@ -481,5 +833,29 @@ public class TakePhoto : MonoBehaviour
     private static int GetPhotosPerPage()
     {
         return 8;
+    }
+
+    private string GetPhotoResultLabel(int photoIndex)
+    {
+        if (photoIndex < 0 ||
+            photoIndex >= photos.Count ||
+            photoIndex >= photoAccepted.Count)
+        {
+            return string.Empty;
+        }
+
+        if (photoAccepted[photoIndex])
+        {
+            return $"CLEAR  MTF50 {photoMtf50Retentions[photoIndex]:P0}";
+        }
+
+        if (!photoCapturedPlayers[photoIndex])
+        {
+            return "FAILED  NO PLAYER";
+        }
+
+        return
+            $"FAILED  MTF50 {photoMtf50Retentions[photoIndex]:P0}  " +
+            $"{photoBlurLengths[photoIndex]:F1}px";
     }
 }

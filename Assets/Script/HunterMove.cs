@@ -3,6 +3,8 @@ using UnityEngine;
 [RequireComponent(typeof(Rigidbody), typeof(Collider))]
 public class HunterMove : MonoBehaviour
 {
+    private const float PhotoSightProbeRadius = 0.07f;
+
     private enum HunterState
     {
         Search,
@@ -43,9 +45,20 @@ public class HunterMove : MonoBehaviour
     [SerializeField] private float fastTargetFollowPenalty = 0.55f;
     [SerializeField] private float lockedWarningDuration = 0.45f;
     [SerializeField] private float shotCooldown = 0.9f;
-    [SerializeField, Range(3f, 100f)] private float bulletSpeed = 12f;
-    [SerializeField] private float bulletGravity = 0f;
-    [SerializeField] private float bulletLifetime = 4.5f;
+
+    [Header("Photography")]
+    [Tooltip("Reciprocal exposure time. 60 means 1/60 second; lower values create more motion blur.")]
+    [SerializeField, Min(1f)] private float shutterSpeed = 60f;
+    [Tooltip("Physical focal length on a 36 x 24 mm full-frame sensor. The saved photo is center-cropped to its output aspect ratio.")]
+    [SerializeField, Min(1f)] private float photoFocalLength = 200f;
+    [Tooltip("Sensor pixel pitch in micrometers. Canon 80D reference: 3.72.")]
+    [SerializeField, Min(0.1f)] private float sensorPixelPitchMicrometers = 3.72f;
+    [Tooltip("Calibration multiplier applied after the physical blur calculation.")]
+    [SerializeField, Min(0.1f)] private float motionBlurScale = 1f;
+    [Tooltip("Static-camera MTF50 baseline in cycles per output pixel.")]
+    [SerializeField, Range(0.05f, 0.5f)] private float sharpMtf50 = 0.35f;
+    [Tooltip("Minimum MTF50 retention required for the player photo to count.")]
+    [SerializeField, Range(0f, 1f)] private float minimumMtf50Retention = 0.8f;
 
     private Rigidbody body;
     private Collider bodyCollider;
@@ -55,6 +68,9 @@ public class HunterMove : MonoBehaviour
     private Vector3 lastKnownPlayerPosition;
     private Vector3 aimPoint;
     private Vector3 aimVelocity;
+    private Vector3 previousPhotoDirection;
+    private Vector3 photoCameraAngularVelocity;
+    private bool hasPreviousPhotoDirection;
     private Bounds patrolBounds;
     private float stateTimer;
     private float lostSightTimer;
@@ -313,6 +329,7 @@ public class HunterMove : MonoBehaviour
             }
         }
 
+        UpdatePhotoCameraMotion();
         if (aimLocked && stateTimer >= lockedWarningDuration)
         {
             Fire();
@@ -378,10 +395,48 @@ public class HunterMove : MonoBehaviour
         lostSightTimer = 0f;
         aimPoint = player.transform.position;
         aimVelocity = Vector3.zero;
+        photoCameraAngularVelocity = Vector3.zero;
+        hasPreviousPhotoDirection = false;
         aimLocked = false;
         RememberPlayerPosition();
         SetWarningColor(new Color(0.1f, 1f, 0.15f));
         SetWarningVisible(false);
+    }
+
+    private void UpdatePhotoCameraMotion()
+    {
+        Vector3 currentDirection = aimPoint - GetEyePosition();
+        if (currentDirection.sqrMagnitude < 0.0001f)
+        {
+            photoCameraAngularVelocity = Vector3.zero;
+            hasPreviousPhotoDirection = false;
+            return;
+        }
+
+        currentDirection.Normalize();
+        if (hasPreviousPhotoDirection && Time.deltaTime > 0.0001f)
+        {
+            Quaternion directionDelta = Quaternion.FromToRotation(
+                previousPhotoDirection,
+                currentDirection);
+            directionDelta.ToAngleAxis(out float angle, out Vector3 axis);
+            if (angle > 180f)
+            {
+                angle -= 360f;
+            }
+
+            photoCameraAngularVelocity =
+                Mathf.Abs(angle) < 0.0001f
+                    ? Vector3.zero
+                    : axis.normalized * (angle / Time.deltaTime);
+        }
+        else
+        {
+            photoCameraAngularVelocity = Vector3.zero;
+        }
+
+        previousPhotoDirection = currentDirection;
+        hasPreviousPhotoDirection = true;
     }
 
     private void Fire()
@@ -393,7 +448,7 @@ public class HunterMove : MonoBehaviour
 
         if (player == null)
         {
-            RegisterMiss();
+            RegisterFailedPhoto();
             return;
         }
 
@@ -401,32 +456,52 @@ public class HunterMove : MonoBehaviour
         Vector3 direction = aimPoint - origin;
         if (direction.sqrMagnitude < 0.001f)
         {
-            RegisterMiss();
+            RegisterFailedPhoto();
             return;
         }
 
         Vector3 fireDirection = direction.normalized;
         TakePhoto takePhoto = GetComponent<TakePhoto>();
+        bool capturedPlayerClearly = false;
         if (takePhoto != null)
         {
-            takePhoto.Capture(origin, fireDirection);
+            Rigidbody playerBody = player.GetComponent<Rigidbody>();
+            Vector3 playerVelocity = playerBody == null
+                ? Vector3.zero
+                : playerBody.velocity;
+            capturedPlayerClearly = takePhoto.Capture(
+                origin,
+                fireDirection,
+                player.transform,
+                playerVelocity,
+                shutterSpeed,
+                photoFocalLength,
+                sensorPixelPitchMicrometers,
+                motionBlurScale,
+                body.velocity,
+                photoCameraAngularVelocity,
+                sharpMtf50,
+                minimumMtf50Retention);
         }
 
-        HunterBullet.Create(
-            origin,
-            fireDirection,
-            bulletSpeed,
-            bulletGravity,
-            bulletLifetime,
-            direction.magnitude,
-            transform);
+        if (GameManager.Instance != null)
+        {
+            if (capturedPlayerClearly)
+            {
+                GameManager.Instance.RegisterClearPlayerPhoto();
+            }
+            else
+            {
+                GameManager.Instance.RegisterFailedPlayerPhoto();
+            }
+        }
     }
 
-    private void RegisterMiss()
+    private void RegisterFailedPhoto()
     {
         if (GameManager.Instance != null)
         {
-            GameManager.Instance.RegisterHunterMiss();
+            GameManager.Instance.RegisterFailedPlayerPhoto();
         }
     }
 
@@ -527,7 +602,7 @@ public class HunterMove : MonoBehaviour
 
         RaycastHit[] hits = Physics.SphereCastAll(
             origin,
-            HunterBullet.CollisionRadius,
+            PhotoSightProbeRadius,
             direction.normalized,
             distance + 0.1f,
             visionLayers,
