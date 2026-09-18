@@ -5218,6 +5218,30 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 204049576}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!114 &221435151
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cba17d399ab86974c8ef9551f6e8f8d4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  transformSettings:
+    translation: {x: 1389.8464, y: 146.64413, z: 1237.2158}
+    scale: {x: 5.1686354, y: 1, z: 5.1686354}
+    rotation: {x: 0, y: 0, z: 0}
+    flipScaleX: 0
+    flipScaleY: 0
+    flipScaleZ: 0
+  domainSettings:
+    noiseTypeName: Perlin
+    fractalTypeName: Fbm
+    noiseTypeParams: 
+    fractalTypeParams: '{"warpOffsets":{"x":-23.62227439880371,"y":-740.6602172851563,"z":295.54010009765627,"w":0.0},"octavesMinMax":{"x":0.0,"y":16.0},"amplitudeMinMax":{"x":0.0,"y":1.0},"frequencyMinMax":{"x":0.0,"y":2.0},"lacunarityMinMax":{"x":0.0,"y":4.0},"persistenceMinMax":{"x":0.0,"y":1.0},"warpIterationsMinMax":{"x":0.0,"y":8.0},"warpStrengthMinMax":{"x":-2.0,"y":2.0},"octaves":8.0,"amplitude":0.5978570580482483,"frequency":1.0,"persistence":0.5,"lacunarity":1.2288411855697632,"warpIterations":0.12008093297481537,"warpStrength":0.4457036256790161,"warpEnabled":true,"warpExpanded":true}'
 --- !u!1 &243265212
 GameObject:
   m_ObjectHideFlags: 0
@@ -10671,7 +10695,7 @@ MonoBehaviour:
   turnSpeed: 12
   doubleTapWindow: 0.3
   maxStamina: 100
-  flightDrainPerSecond: 0
+  flightDrainPerSecond: 20
   groundedRecoveryPerSecond: 18
   flightRestartStamina: 15
   exhaustionStunSeconds: 1
@@ -11810,7 +11834,7 @@ MonoBehaviour:
       m_warpIterations: 0.12008093
       m_warpStrength: 0.44570363
       m_warpOffset: {x: -23.622274, y: -740.6602, z: 295.5401, w: 0}
-    m_noiseSettings: {fileID: 804664815}
+    m_noiseSettings: {fileID: 221435151}
     m_noiseToolSettings:
       worldHeightRemap: {x: 0, y: 0}
       coordSpace: 0
@@ -16832,30 +16856,6 @@ MonoBehaviour:
   m_impostorLoadRangeActiveColor: {r: 0, g: 1, b: 0, a: 1}
   m_regularLoadRangeInActiveColor: {r: 0, g: 0, b: 0, a: 1}
   m_impostorLoadRangeInActiveColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
---- !u!114 &804664815
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: cba17d399ab86974c8ef9551f6e8f8d4, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  transformSettings:
-    translation: {x: 1389.8464, y: 146.64413, z: 1237.2158}
-    scale: {x: 5.1686354, y: 1, z: 5.1686354}
-    rotation: {x: 0, y: 0, z: 0}
-    flipScaleX: 0
-    flipScaleY: 0
-    flipScaleZ: 0
-  domainSettings:
-    noiseTypeName: Perlin
-    fractalTypeName: Fbm
-    noiseTypeParams: 
-    fractalTypeParams: '{"warpOffsets":{"x":-23.62227439880371,"y":-740.6602172851563,"z":295.54010009765627,"w":0.0},"octavesMinMax":{"x":0.0,"y":16.0},"amplitudeMinMax":{"x":0.0,"y":1.0},"frequencyMinMax":{"x":0.0,"y":2.0},"lacunarityMinMax":{"x":0.0,"y":4.0},"persistenceMinMax":{"x":0.0,"y":1.0},"warpIterationsMinMax":{"x":0.0,"y":8.0},"warpStrengthMinMax":{"x":-2.0,"y":2.0},"octaves":8.0,"amplitude":0.5978570580482483,"frequency":1.0,"persistence":0.5,"lacunarity":1.2288411855697632,"warpIterations":0.12008093297481537,"warpStrength":0.4457036256790161,"warpEnabled":true,"warpExpanded":true}'
 --- !u!1 &811086447
 GameObject:
   m_ObjectHideFlags: 0
@@ -70945,16 +70945,46 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 4294967295
   aimDuration: 1.65
-  stationaryAimFollowTime: 0.08
-  fastTargetFollowPenalty: 0.55
-  lockedWarningDuration: 0.45
+  initialTrackingErrorDegrees: 3
+  residualTrackingErrorDegrees: 0.6
+  movingTargetResidualErrorDegrees: 1.2
+  trackingOscillationFrequency: 1.4
+  verticalTrackingErrorRatio: 0.45
+  captureAimErrorDegrees: 2.2
+  maximumPreferredSubjectBlurPixels: 12
+  lockedWarningDuration: 0.2
   shotCooldown: 0.9
-  shutterSpeed: 640
+  preferredFrameCoverage: 0.2
+  stationaryApproachSpeedThreshold: 0.25
+  exposureMode: 2
+  autoIso: 1
+  shutterSpeed: 2000
+  aperture: 11
+  iso: 400
+  sceneExposureValue100: 15
+  exposureCompensation: 0
+  minimumUsableExposureStops: -2
+  maximumUsableExposureStops: 2
+  noiseReductionMode: 0
+  minimumSignalToNoiseRatioDecibels: 20
+  lensMaximumAperture: 2.8
+  lensMinimumAperture: 22
+  slowestAutomaticShutterSpeed: 150
+  fastestAutomaticShutterSpeed: 8000
+  minimumAutoIsoShutterSpeed: 150
+  minimumAutomaticIso: 100
+  maximumAutomaticIso: 12800
   photoFocalLength: 200
   sensorPixelPitchMicrometers: 3.72
   motionBlurScale: 1
   sharpMtf50: 0.35
-  minimumMtf50Retention: 0.8
+  minimumMtf50Retention: 0.6
+  minimumSuccessfulFrameCoverage: 0.15
+  autofocusTime: 0.03
+  initialFocusDistance: 10
+  minimumFocusDistance: 0.4
+  maximumFocusDistance: 200
+  autofocusReadyTolerance: 0.1
 --- !u!1 &1990631269
 GameObject:
   m_ObjectHideFlags: 0

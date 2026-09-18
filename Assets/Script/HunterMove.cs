@@ -40,15 +40,61 @@ public class HunterMove : MonoBehaviour
     [SerializeField] private LayerMask visionLayers = ~0;
 
     [Header("Aim and fire")]
+    [Tooltip("Time for tracking oscillation to settle by approximately 99 percent.")]
     [SerializeField] private float aimDuration = 1.65f;
-    [SerializeField] private float stationaryAimFollowTime = 0.08f;
-    [SerializeField] private float fastTargetFollowPenalty = 0.55f;
-    [SerializeField] private float lockedWarningDuration = 0.45f;
+    [SerializeField, Min(0f)] private float initialTrackingErrorDegrees = 3f;
+    [SerializeField, Min(0f)] private float residualTrackingErrorDegrees = 0.6f;
+    [SerializeField, Min(0f)] private float movingTargetResidualErrorDegrees = 1.2f;
+    [SerializeField, Min(0.01f)] private float trackingOscillationFrequency = 1.4f;
+    [SerializeField, Range(0f, 1f)] private float verticalTrackingErrorRatio = 0.45f;
+    [SerializeField, Min(0f)] private float captureAimErrorDegrees = 2.2f;
+    [SerializeField, Min(0f)] private float maximumPreferredSubjectBlurPixels = 12f;
+    [SerializeField] private float lockedWarningDuration = 0.2f;
     [SerializeField] private float shotCooldown = 0.9f;
 
+    [Header("Composition Approach")]
+    [SerializeField, Range(0f, 1f)]
+    private float preferredFrameCoverage = 0.2f;
+    [SerializeField, Min(0f)]
+    private float stationaryApproachSpeedThreshold = 0.25f;
+
     [Header("Photography")]
-    [Tooltip("Reciprocal exposure time. 60 means 1/60 second; lower values create more motion blur.")]
-    [SerializeField, Min(1f)] private float shutterSpeed = 60f;
+    [Tooltip("P, A, S, or M determines which exposure settings are automatic.")]
+    [SerializeField] private PhotoExposureMode exposureMode =
+        PhotoExposureMode.Manual;
+    [Tooltip("Allows the camera to adjust ISO within the configured range.")]
+    [SerializeField] private bool autoIso;
+    [Tooltip("Reciprocal exposure time. 640 means 1/640 second; lower values create more motion blur and a brighter exposure.")]
+    [SerializeField, Min(1f)] private float shutterSpeed = 640f;
+    [Tooltip("Lens f-number. Higher values reduce sensor exposure quadratically.")]
+    [SerializeField, Min(0.7f)] private float aperture = 8f;
+    [Tooltip("Sensor output gain. ISO changes brightness and noise, not incoming light.")]
+    [SerializeField, Min(25f)] private float iso = 100f;
+    [Tooltip("EV100 calibration when the metered rendered luminance is 18 percent gray.")]
+    [SerializeField] private float sceneExposureValue100 = 15.32f;
+    [Tooltip("Additional output exposure adjustment in stops.")]
+    [SerializeField] private float exposureCompensation = 0f;
+    [Tooltip("Photos darker than this relative exposure fail the clarity check.")]
+    [SerializeField] private float minimumUsableExposureStops = -2f;
+    [Tooltip("Photos brighter than this relative exposure fail the clarity check.")]
+    [SerializeField] private float maximumUsableExposureStops = 2f;
+    [Tooltip("Disabled checks both SNR and MTF50. Enabled denoises the image and judges the resulting MTF50.")]
+    [SerializeField] private PhotoNoiseReductionMode noiseReductionMode =
+        PhotoNoiseReductionMode.Disabled;
+    [Tooltip("Minimum usable signal-to-noise ratio when noise reduction is disabled.")]
+    [SerializeField, Min(0f)] private float minimumSignalToNoiseRatioDecibels = 20f;
+    [Header("Automatic Exposure Limits")]
+    [Tooltip("Smallest f-number the lens can select.")]
+    [SerializeField, Min(0.7f)] private float lensMaximumAperture = 2.8f;
+    [Tooltip("Largest f-number the lens can select.")]
+    [SerializeField, Min(0.7f)] private float lensMinimumAperture = 22f;
+    [SerializeField, Min(1f)] private float slowestAutomaticShutterSpeed = 30f;
+    [SerializeField, Min(1f)] private float fastestAutomaticShutterSpeed = 8000f;
+    [Tooltip("In A/P + Auto ISO, ISO rises before shutter becomes slower than this.")]
+    [SerializeField, Min(1f)] private float minimumAutoIsoShutterSpeed = 500f;
+    [SerializeField, Min(25f)] private float minimumAutomaticIso = 100f;
+    [SerializeField, Min(25f)] private float maximumAutomaticIso = 12800f;
+    [Header("Optics and Image Quality")]
     [Tooltip("Physical focal length on a 36 x 24 mm full-frame sensor. The saved photo is center-cropped to its output aspect ratio.")]
     [SerializeField, Min(1f)] private float photoFocalLength = 200f;
     [Tooltip("Sensor pixel pitch in micrometers. Canon 80D reference: 3.72.")]
@@ -59,6 +105,18 @@ public class HunterMove : MonoBehaviour
     [SerializeField, Range(0.05f, 0.5f)] private float sharpMtf50 = 0.35f;
     [Tooltip("Minimum MTF50 retention required for the player photo to count.")]
     [SerializeField, Range(0f, 1f)] private float minimumMtf50Retention = 0.8f;
+    [Tooltip("Minimum linear player projection required for a successful photo.")]
+    [SerializeField, Range(0f, 1f)]
+    private float minimumSuccessfulFrameCoverage = 0.2f;
+
+    [Header("Autofocus")]
+    [Tooltip("Time in seconds for autofocus to settle by approximately 99 percent.")]
+    [SerializeField, Min(0f)] private float autofocusTime = 0.03f;
+    [Tooltip("Focus distance used before the hunter has taken its first photo.")]
+    [SerializeField, Min(0.21f)] private float initialFocusDistance = 20f;
+    [SerializeField, Min(0.21f)] private float minimumFocusDistance = 0.3f;
+    [SerializeField, Min(0.3f)] private float maximumFocusDistance = 200f;
+    [SerializeField, Min(0f)] private float autofocusReadyTolerance = 0.1f;
 
     private Rigidbody body;
     private Collider bodyCollider;
@@ -67,12 +125,15 @@ public class HunterMove : MonoBehaviour
     private Vector3 patrolTarget;
     private Vector3 lastKnownPlayerPosition;
     private Vector3 aimPoint;
-    private Vector3 aimVelocity;
     private Vector3 previousPhotoDirection;
     private Vector3 photoCameraAngularVelocity;
     private bool hasPreviousPhotoDirection;
+    private float currentFocusDistance;
     private Bounds patrolBounds;
     private float stateTimer;
+    private float trackingElapsedTime;
+    private float captureReadyTimer;
+    private float currentTrackingErrorDegrees;
     private float lostSightTimer;
     private float avoidanceSide = 1f;
     private float avoidanceCommitUntil;
@@ -91,6 +152,33 @@ public class HunterMove : MonoBehaviour
     private static readonly int BackwardState = Animator.StringToHash("Base Layer.Stepping Backward");
     private static readonly int CrouchIdleState = Animator.StringToHash("Base Layer.Crouch Idle");
 
+    private void OnValidate()
+    {
+        lensMaximumAperture =
+            PhotoExposurePhysics.SnapAperture(lensMaximumAperture);
+        lensMinimumAperture =
+            PhotoExposurePhysics.SnapAperture(lensMinimumAperture);
+        lensMinimumAperture = Mathf.Max(
+            lensMaximumAperture,
+            lensMinimumAperture);
+        aperture = Mathf.Clamp(
+            PhotoExposurePhysics.SnapAperture(aperture),
+            lensMaximumAperture,
+            lensMinimumAperture);
+
+        minimumAutomaticIso =
+            PhotoExposurePhysics.SnapIso(minimumAutomaticIso);
+        maximumAutomaticIso =
+            PhotoExposurePhysics.SnapIso(maximumAutomaticIso);
+        maximumAutomaticIso = Mathf.Max(
+            minimumAutomaticIso,
+            maximumAutomaticIso);
+        iso = Mathf.Clamp(
+            PhotoExposurePhysics.SnapIso(iso),
+            minimumAutomaticIso,
+            maximumAutomaticIso);
+    }
+
     private void Awake()
     {
         body = GetComponent<Rigidbody>();
@@ -107,6 +195,10 @@ public class HunterMove : MonoBehaviour
         body.constraints = RigidbodyConstraints.FreezeRotation;
         body.drag = 2f;
         lastProgressPosition = transform.position;
+        currentFocusDistance = Mathf.Clamp(
+            initialFocusDistance,
+            minimumFocusDistance,
+            maximumFocusDistance);
 
         ConfigurePatrolBounds();
         CreateWarningIndicator();
@@ -223,7 +315,14 @@ public class HunterMove : MonoBehaviour
         SetWarningVisible(false);
         if (TryAcquireVisiblePlayer())
         {
-            EnterAim();
+            if (ShouldApproachForComposition(player))
+            {
+                EnterInvestigate();
+            }
+            else
+            {
+                EnterAim();
+            }
             return;
         }
 
@@ -240,7 +339,10 @@ public class HunterMove : MonoBehaviour
         SetWarningVisible(false);
         if (TryAcquireVisiblePlayer())
         {
-            EnterAim();
+            if (!ShouldApproachForComposition(player))
+            {
+                EnterAim();
+            }
             return;
         }
 
@@ -254,6 +356,7 @@ public class HunterMove : MonoBehaviour
 
     private void UpdateAim()
     {
+        trackingElapsedTime += Time.deltaTime;
         bool crouchComplete = IsCrouchedPoseReady();
         SetWarningVisible(crouchComplete);
         if (crouchComplete)
@@ -280,6 +383,11 @@ public class HunterMove : MonoBehaviour
         {
             RememberPlayerPosition();
             lostSightTimer = 0f;
+            if (ShouldApproachForComposition(player))
+            {
+                EnterInvestigate();
+                return;
+            }
         }
         else
         {
@@ -291,46 +399,50 @@ public class HunterMove : MonoBehaviour
             }
         }
 
+        Vector3 trackingTarget = canSeePlayer
+            ? visibleAimPoint
+            : lastKnownPlayerPosition;
+        UpdateOscillatingTracking(trackingTarget);
+        Vector3 focusPoint = canSeePlayer
+            ? GetVisualFocusPoint(
+                player.transform,
+                GetEyePosition())
+            : trackingTarget;
+        UpdateAutoFocus(focusPoint);
+        UpdatePhotoCameraMotion();
+
         if (!crouchComplete)
         {
-            if (canSeePlayer)
-            {
-                aimPoint = visibleAimPoint;
-            }
-
+            aimLocked = false;
+            captureReadyTimer = 0f;
             return;
         }
 
-        if (!aimLocked)
+        float predictedSubjectBlurPixels =
+            EstimateSubjectMotionBlurPixels();
+        bool readyToCapture =
+            canSeePlayer &&
+            IsAutoFocusReady(focusPoint) &&
+            currentTrackingErrorDegrees <= captureAimErrorDegrees &&
+            predictedSubjectBlurPixels <=
+                maximumPreferredSubjectBlurPixels;
+        if (readyToCapture)
         {
-            SetWarningColor(new Color(0.1f, 1f, 0.15f));
-
-            float followTime = stationaryAimFollowTime + player.NormalizedSpeed * fastTargetFollowPenalty;
-            aimPoint = Vector3.SmoothDamp(
-                aimPoint,
-                canSeePlayer ? visibleAimPoint : lastKnownPlayerPosition,
-                ref aimVelocity,
-                followTime);
-
-            if (stateTimer >= aimDuration)
-            {
-                aimLocked = true;
-                stateTimer = 0f;
-                aimVelocity = Vector3.zero;
-                SetWarningColor(Color.red);
-            }
+            aimLocked = true;
+            captureReadyTimer += Time.deltaTime;
+            SetWarningColor(Color.red);
         }
         else
         {
-            SetWarningColor(Color.red);
-            if (canSeePlayer)
-            {
-                aimPoint = visibleAimPoint;
-            }
+            aimLocked = false;
+            captureReadyTimer = Mathf.Max(
+                0f,
+                captureReadyTimer - Time.deltaTime * 0.5f);
+            SetWarningColor(new Color(0.1f, 1f, 0.15f));
         }
 
-        UpdatePhotoCameraMotion();
-        if (aimLocked && stateTimer >= lockedWarningDuration)
+        if (aimLocked &&
+            captureReadyTimer >= lockedWarningDuration)
         {
             Fire();
             state = HunterState.Cooldown;
@@ -362,7 +474,14 @@ public class HunterMove : MonoBehaviour
         {
             if (canTrackPlayer)
             {
-                EnterAim();
+                if (ShouldApproachForComposition(player))
+                {
+                    EnterInvestigate();
+                }
+                else
+                {
+                    EnterAim();
+                }
             }
             else
             {
@@ -394,13 +513,212 @@ public class HunterMove : MonoBehaviour
         stateTimer = 0f;
         lostSightTimer = 0f;
         aimPoint = player.transform.position;
-        aimVelocity = Vector3.zero;
+        trackingElapsedTime = 0f;
+        captureReadyTimer = 0f;
+        currentTrackingErrorDegrees = 180f;
         photoCameraAngularVelocity = Vector3.zero;
         hasPreviousPhotoDirection = false;
         aimLocked = false;
         RememberPlayerPosition();
         SetWarningColor(new Color(0.1f, 1f, 0.15f));
         SetWarningVisible(false);
+    }
+
+    private void UpdateOscillatingTracking(Vector3 targetPoint)
+    {
+        Vector3 eyePosition = GetEyePosition();
+        Vector3 targetOffset = targetPoint - eyePosition;
+        float targetDistance = targetOffset.magnitude;
+        if (targetDistance <= 0.0001f)
+        {
+            aimPoint = targetPoint;
+            currentTrackingErrorDegrees = 0f;
+            return;
+        }
+
+        Vector3 targetDirection = targetOffset / targetDistance;
+        Quaternion targetRotation = Quaternion.LookRotation(
+            targetDirection,
+            Vector3.up);
+        float settleDuration = Mathf.Max(0.01f, aimDuration);
+        float decay = Mathf.Exp(
+            -4.6f * trackingElapsedTime / settleDuration);
+        float residualError =
+            residualTrackingErrorDegrees +
+            player.NormalizedSpeed *
+            movingTargetResidualErrorDegrees;
+        float errorEnvelope =
+            residualError +
+            Mathf.Max(
+                0f,
+                initialTrackingErrorDegrees - residualError) *
+            decay;
+        float phase =
+            trackingElapsedTime *
+            trackingOscillationFrequency *
+            Mathf.PI *
+            2f -
+            Mathf.PI *
+            0.5f;
+        float yawError = Mathf.Sin(phase) * errorEnvelope;
+        float pitchError =
+            Mathf.Sin(phase * 0.83f + 1.2f) *
+            errorEnvelope *
+            verticalTrackingErrorRatio;
+        Quaternion errorRotation =
+            Quaternion.AngleAxis(
+                yawError,
+                targetRotation * Vector3.up) *
+            Quaternion.AngleAxis(
+                pitchError,
+                targetRotation * Vector3.right);
+        Vector3 trackedDirection =
+            errorRotation * targetDirection;
+        aimPoint =
+            eyePosition +
+            trackedDirection * targetDistance;
+        currentTrackingErrorDegrees =
+            Vector3.Angle(trackedDirection, targetDirection);
+    }
+
+    private void UpdateAutoFocus(Vector3 focusPoint)
+    {
+        float minimumDistance = Mathf.Max(0.21f, minimumFocusDistance);
+        float maximumDistance = Mathf.Max(
+            minimumDistance,
+            maximumFocusDistance);
+        float targetFocusDistance = Mathf.Clamp(
+            Vector3.Distance(GetEyePosition(), focusPoint),
+            minimumDistance,
+            maximumDistance);
+        if (autofocusTime <= 0.0001f)
+        {
+            currentFocusDistance = targetFocusDistance;
+            return;
+        }
+
+        float focusBlend =
+            1f -
+            Mathf.Exp(-4.6f * Time.deltaTime / autofocusTime);
+        currentFocusDistance = Mathf.Lerp(
+            currentFocusDistance,
+            targetFocusDistance,
+            focusBlend);
+    }
+
+    private bool IsAutoFocusReady(Vector3 focusPoint)
+    {
+        float targetFocusDistance = Mathf.Clamp(
+            Vector3.Distance(GetEyePosition(), focusPoint),
+            Mathf.Max(0.21f, minimumFocusDistance),
+            Mathf.Max(minimumFocusDistance, maximumFocusDistance));
+        float tolerance = Mathf.Max(
+            autofocusReadyTolerance,
+            targetFocusDistance * 0.002f);
+        return Mathf.Abs(
+            currentFocusDistance - targetFocusDistance) <= tolerance;
+    }
+
+    private float EstimateSubjectMotionBlurPixels()
+    {
+        if (player == null)
+        {
+            return float.PositiveInfinity;
+        }
+
+        Vector3 eyePosition = GetEyePosition();
+        Vector3 direction = aimPoint - eyePosition;
+        if (direction.sqrMagnitude <= 0.0001f)
+        {
+            return float.PositiveInfinity;
+        }
+
+        Rigidbody playerBody = player.GetComponent<Rigidbody>();
+        Vector3 playerVelocity = playerBody == null
+            ? Vector3.zero
+            : playerBody.velocity;
+        PhotoBlurPhysics.Solution blur =
+            PhotoBlurPhysics.Solve(
+                eyePosition,
+                Quaternion.LookRotation(
+                    direction.normalized,
+                    Vector3.up),
+                body.velocity,
+                photoCameraAngularVelocity,
+                player.transform.position,
+                playerVelocity,
+                photoFocalLength,
+                shutterSpeed,
+                sensorPixelPitchMicrometers,
+                24f,
+                720,
+                motionBlurScale);
+        return blur.BlurLengthPixels;
+    }
+
+    private static Vector3 GetVisualFocusPoint(
+        Transform target,
+        Vector3 cameraPosition)
+    {
+        if (target == null)
+        {
+            return Vector3.zero;
+        }
+
+        Renderer[] renderers =
+            target.GetComponentsInChildren<Renderer>(true);
+        bool hasBounds = false;
+        Bounds combinedBounds = default;
+        foreach (Renderer targetRenderer in renderers)
+        {
+            if (targetRenderer == null || !targetRenderer.enabled)
+            {
+                continue;
+            }
+
+            if (!hasBounds)
+            {
+                combinedBounds = targetRenderer.bounds;
+                hasBounds = true;
+            }
+            else
+            {
+                combinedBounds.Encapsulate(targetRenderer.bounds);
+            }
+        }
+
+        Vector3 center =
+            hasBounds ? combinedBounds.center : target.position;
+        Vector3 direction = center - cameraPosition;
+        float distance = direction.magnitude;
+        if (distance <= 0.0001f)
+        {
+            return center;
+        }
+
+        Ray focusRay = new Ray(
+            cameraPosition,
+            direction / distance);
+        Collider[] colliders =
+            target.GetComponentsInChildren<Collider>(true);
+        float closestDistance = float.PositiveInfinity;
+        Vector3 closestPoint = center;
+        foreach (Collider targetCollider in colliders)
+        {
+            if (targetCollider != null &&
+                targetCollider.enabled &&
+                targetCollider.Raycast(
+                    focusRay,
+                    out RaycastHit hit,
+                    distance + 1f) &&
+                hit.distance < closestDistance)
+            {
+                closestDistance = hit.distance;
+                closestPoint = hit.point;
+            }
+        }
+
+        return closestPoint;
     }
 
     private void UpdatePhotoCameraMotion()
@@ -480,8 +798,27 @@ public class HunterMove : MonoBehaviour
                 motionBlurScale,
                 body.velocity,
                 photoCameraAngularVelocity,
+                aperture,
+                iso,
+                sceneExposureValue100,
+                exposureCompensation,
+                exposureMode,
+                autoIso,
+                lensMaximumAperture,
+                lensMinimumAperture,
+                slowestAutomaticShutterSpeed,
+                fastestAutomaticShutterSpeed,
+                minimumAutoIsoShutterSpeed,
+                minimumAutomaticIso,
+                maximumAutomaticIso,
+                minimumUsableExposureStops,
+                maximumUsableExposureStops,
+                noiseReductionMode,
+                minimumSignalToNoiseRatioDecibels,
+                currentFocusDistance,
                 sharpMtf50,
-                minimumMtf50Retention);
+                minimumMtf50Retention,
+                minimumSuccessfulFrameCoverage);
         }
 
         if (GameManager.Instance != null)
@@ -535,6 +872,38 @@ public class HunterMove : MonoBehaviour
         }
 
         return HasLineOfSight(candidate, visionDistance);
+    }
+
+    private bool ShouldApproachForComposition(PlayerMove candidate)
+    {
+        if (candidate == null ||
+            (candidate.IsFlying &&
+                candidate.CurrentSpeed >
+                stationaryApproachSpeedThreshold))
+        {
+            return false;
+        }
+
+        Vector3 eyePosition = GetEyePosition();
+        Vector3 focusPoint = GetVisualFocusPoint(
+            candidate.transform,
+            eyePosition);
+        Vector3 direction = focusPoint - eyePosition;
+        if (direction.sqrMagnitude <= 0.0001f)
+        {
+            return false;
+        }
+
+        float frameCoverage =
+            TakePhoto.CalculateSubjectFrameCoverage(
+                eyePosition,
+                Quaternion.LookRotation(
+                    direction.normalized,
+                    Vector3.up),
+                candidate.transform,
+                photoFocalLength,
+                16f / 9f);
+        return frameCoverage < preferredFrameCoverage;
     }
 
     private bool HasLineOfSight(PlayerMove candidate, float maxDistance)
