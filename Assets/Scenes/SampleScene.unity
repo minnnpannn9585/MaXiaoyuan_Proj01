@@ -70980,6 +70980,7 @@ MonoBehaviour:
   sharpMtf50: 0.35
   minimumMtf50Retention: 0.6
   minimumSuccessfulFrameCoverage: 0.15
+  minimumVisibleSubjectFraction: 0.8
   autofocusTime: 0.03
   initialFocusDistance: 10
   minimumFocusDistance: 0.4

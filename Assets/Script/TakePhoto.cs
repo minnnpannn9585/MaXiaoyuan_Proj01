@@ -60,6 +60,10 @@ public class TakePhoto : MonoBehaviour
         new List<float>();
     private readonly List<float> photoMinimumFrameCoverages =
         new List<float>();
+    private readonly List<float> photoSubjectVisibilityFractions =
+        new List<float>();
+    private readonly List<float> photoMinimumVisibilityFractions =
+        new List<float>();
     private readonly List<bool> hunterRendererStates = new List<bool>();
     private readonly List<Renderer> hunterRenderers = new List<Renderer>();
 
@@ -145,6 +149,8 @@ public class TakePhoto : MonoBehaviour
         photoIsoValues.Clear();
         photoSubjectFrameCoverages.Clear();
         photoMinimumFrameCoverages.Clear();
+        photoSubjectVisibilityFractions.Clear();
+        photoMinimumVisibilityFractions.Clear();
     }
 
     private void Update()
@@ -191,7 +197,8 @@ public class TakePhoto : MonoBehaviour
         float focusDistanceMeters,
         float sharpMtf50,
         float minimumMtf50Retention,
-        float minimumSubjectFrameCoverage)
+        float minimumSubjectFrameCoverage,
+        float minimumVisibleSubjectFraction)
     {
         if (direction.sqrMagnitude < 0.0001f)
         {
@@ -413,7 +420,11 @@ public class TakePhoto : MonoBehaviour
             return false;
         }
 
-        bool capturedPlayer = IsSubjectVisibleInPhoto(subject);
+        float subjectVisibilityFraction =
+            CalculateSubjectVisibilityFraction(subject);
+        bool capturedPlayer =
+            subjectVisibilityFraction >=
+            minimumVisibleSubjectFraction;
         float subjectFrameCoverage =
             CalculateSubjectFrameCoverage(
                 photoCamera.transform.position,
@@ -470,7 +481,9 @@ public class TakePhoto : MonoBehaviour
             autoIso,
             cameraSettings,
             subjectFrameCoverage,
-            minimumSubjectFrameCoverage);
+            minimumSubjectFrameCoverage,
+            subjectVisibilityFraction,
+            minimumVisibleSubjectFraction);
         lastCaptureTime = Time.unscaledTime;
         return successfulPhoto;
     }
@@ -539,6 +552,100 @@ public class TakePhoto : MonoBehaviour
         }
 
         return closestPoint;
+    }
+
+    private float CalculateSubjectVisibilityFraction(Transform subject)
+    {
+        if (subject == null ||
+            !TryGetSubjectPixelRect(
+                subject,
+                out RectInt subjectRect,
+                0))
+        {
+            return 0f;
+        }
+
+        Collider[] subjectColliders =
+            subject.GetComponentsInChildren<Collider>(true);
+        if (subjectColliders.Length == 0)
+        {
+            return IsSubjectVisibleInPhoto(subject) ? 1f : 0f;
+        }
+
+        const int samplesPerAxis = 9;
+        int subjectSamples = 0;
+        int visibleSamples = 0;
+        for (int y = 0; y < samplesPerAxis; y++)
+        {
+            for (int x = 0; x < samplesPerAxis; x++)
+            {
+                float pixelX = Mathf.Lerp(
+                    subjectRect.xMin,
+                    subjectRect.xMax,
+                    (x + 0.5f) / samplesPerAxis);
+                float pixelY = Mathf.Lerp(
+                    subjectRect.yMin,
+                    subjectRect.yMax,
+                    (y + 0.5f) / samplesPerAxis);
+                Ray sampleRay = photoCamera.ViewportPointToRay(
+                    new Vector3(
+                        pixelX / photoWidth,
+                        pixelY / photoHeight,
+                        0f));
+                float subjectDistance = float.PositiveInfinity;
+                foreach (Collider subjectCollider in subjectColliders)
+                {
+                    if (subjectCollider != null &&
+                        subjectCollider.enabled &&
+                        subjectCollider.Raycast(
+                            sampleRay,
+                            out RaycastHit subjectHit,
+                            photoCamera.farClipPlane) &&
+                        subjectHit.distance < subjectDistance)
+                    {
+                        subjectDistance = subjectHit.distance;
+                    }
+                }
+
+                if (float.IsPositiveInfinity(subjectDistance))
+                {
+                    continue;
+                }
+
+                subjectSamples++;
+                RaycastHit[] hits = Physics.RaycastAll(
+                    sampleRay,
+                    Mathf.Max(
+                        photoCamera.nearClipPlane,
+                        subjectDistance - 0.001f),
+                    Physics.AllLayers,
+                    QueryTriggerInteraction.Ignore);
+                bool blocked = false;
+                foreach (RaycastHit hit in hits)
+                {
+                    if (hit.collider == null ||
+                        hit.transform == transform ||
+                        hit.transform.IsChildOf(transform) ||
+                        hit.transform == subject ||
+                        hit.transform.IsChildOf(subject))
+                    {
+                        continue;
+                    }
+
+                    blocked = true;
+                    break;
+                }
+
+                if (!blocked)
+                {
+                    visibleSamples++;
+                }
+            }
+        }
+
+        return subjectSamples <= 0
+            ? 0f
+            : visibleSamples / (float)subjectSamples;
     }
 
     private bool IsSubjectVisibleInPhoto(Transform subject)
@@ -1232,7 +1339,9 @@ public class TakePhoto : MonoBehaviour
         bool autoIso,
         PhotoExposurePhysics.CameraSettings cameraSettings,
         float subjectFrameCoverage,
-        float minimumFrameCoverage)
+        float minimumFrameCoverage,
+        float subjectVisibilityFraction,
+        float minimumVisibilityFraction)
     {
         photos.Add(photo);
         photoAccepted.Add(accepted);
@@ -1253,6 +1362,8 @@ public class TakePhoto : MonoBehaviour
         photoIsoValues.Add(cameraSettings.Iso);
         photoSubjectFrameCoverages.Add(subjectFrameCoverage);
         photoMinimumFrameCoverages.Add(minimumFrameCoverage);
+        photoSubjectVisibilityFractions.Add(subjectVisibilityFraction);
+        photoMinimumVisibilityFractions.Add(minimumVisibilityFraction);
         while (photos.Count > maxStoredPhotos)
         {
             Texture2D oldest = photos[0];
@@ -1275,6 +1386,8 @@ public class TakePhoto : MonoBehaviour
             photoIsoValues.RemoveAt(0);
             photoSubjectFrameCoverages.RemoveAt(0);
             photoMinimumFrameCoverages.RemoveAt(0);
+            photoSubjectVisibilityFractions.RemoveAt(0);
+            photoMinimumVisibilityFractions.RemoveAt(0);
             Destroy(oldest);
             if (selectedPhotoIndex >= 0)
             {
@@ -1793,6 +1906,7 @@ public class TakePhoto : MonoBehaviour
                 24f),
             $"{GetPhotoResultLabel(photoIndex)}    " +
             $"Frame {photoSubjectFrameCoverages[photoIndex]:P0}    " +
+            $"Visible {photoSubjectVisibilityFractions[photoIndex]:P0}    " +
             $"Motion {photoBlurLengths[photoIndex]:F1}px    " +
             $"Defocus {photoDefocusBlurDiameters[photoIndex]:F1}px",
             overlayHintStyle);
@@ -1872,6 +1986,15 @@ public class TakePhoto : MonoBehaviour
 
         if (!photoCapturedPlayers[photoIndex])
         {
+            if (photoSubjectVisibilityFractions[photoIndex] > 0f)
+            {
+                return
+                    $"FAILED  OCCLUDED " +
+                    $"{photoSubjectVisibilityFractions[photoIndex]:P0} " +
+                    $"<{photoMinimumVisibilityFractions[photoIndex]:P0}  " +
+                    GetExposureLabel(photoIndex);
+            }
+
             return
                 $"FAILED  NO PLAYER  " +
                 GetExposureLabel(photoIndex);

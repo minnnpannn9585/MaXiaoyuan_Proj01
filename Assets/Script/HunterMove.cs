@@ -108,6 +108,9 @@ public class HunterMove : MonoBehaviour
     [Tooltip("Minimum linear player projection required for a successful photo.")]
     [SerializeField, Range(0f, 1f)]
     private float minimumSuccessfulFrameCoverage = 0.2f;
+    [Tooltip("Minimum fraction of the player's collider silhouette that must be unobstructed.")]
+    [SerializeField, Range(0f, 1f)]
+    private float minimumVisibleSubjectFraction = 0.8f;
 
     [Header("Autofocus")]
     [Tooltip("Time in seconds for autofocus to settle by approximately 99 percent.")]
@@ -818,7 +821,8 @@ public class HunterMove : MonoBehaviour
                 currentFocusDistance,
                 sharpMtf50,
                 minimumMtf50Retention,
-                minimumSuccessfulFrameCoverage);
+                minimumSuccessfulFrameCoverage,
+                minimumVisibleSubjectFraction);
         }
 
         if (GameManager.Instance != null)
