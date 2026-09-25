@@ -6,16 +6,17 @@ public class ThirdPersonCamera : MonoBehaviour
 {
     [SerializeField] private Transform target;
     [Header("Over-shoulder View")]
-    [SerializeField] private float focusHeight = 0.09f;
-    [SerializeField] private float cameraDistance = 0.85f;
-    [SerializeField] private float shoulderOffset = 0.16f;
-    [SerializeField] private float lookAheadDistance = 0.28f;
-    [SerializeField] private float fieldOfView = 68f;
+    [SerializeField] private float focusHeight = 0.18f;
+    [SerializeField] private float cameraDistance = 1.6f;
+    [SerializeField] private float shoulderOffset = 0.35f;
+    [SerializeField] private float lookAheadDistance = 0.55f;
+    [SerializeField] private float fieldOfView = 75f;
 
     [Header("Orbit")]
     [SerializeField] private float mouseSensitivity = 3f;
     [SerializeField] private float minPitch = -30f;
     [SerializeField] private float maxPitch = 72f;
+    [SerializeField] private float initialPitch = 24f;
 
     [Header("Camera Collision")]
     [SerializeField] private float positionSmoothTime = 0.045f;
@@ -37,6 +38,68 @@ public class ThirdPersonCamera : MonoBehaviour
     private Renderer[] targetRenderers;
     private readonly List<FadeMaterial> fadeMaterials = new List<FadeMaterial>();
     private float currentPlayerAlpha = 1f;
+    private Camera viewCamera;
+    private readonly List<FadeRenderer> fadeRenderers = new List<FadeRenderer>();
+    private bool fadeApplied;
+
+    private sealed class FadeRenderer
+    {
+        public Renderer Renderer;
+        public Material[] Originals;
+        public Material[] Faded;
+    }
+
+    private void OnEnable()
+    {
+        viewCamera = GetComponent<Camera>();
+        RenderPipelineManager.beginCameraRendering += BeginCameraRendering;
+        RenderPipelineManager.endCameraRendering += EndCameraRendering;
+    }
+
+    private void OnDisable()
+    {
+        RenderPipelineManager.beginCameraRendering -= BeginCameraRendering;
+        RenderPipelineManager.endCameraRendering -= EndCameraRendering;
+        ReleaseFadeMaterials();
+        cachedFadeTarget = null;
+    }
+
+    private void BeginCameraRendering(ScriptableRenderContext context, Camera camera)
+    {
+        // Other cameras (including nested photo renders) always see the real materials.
+        RestorePlayerMaterials();
+        if (camera != viewCamera || currentPlayerAlpha >= 0.999f) return;
+        foreach (FadeRenderer entry in fadeRenderers)
+            if (entry.Renderer != null) entry.Renderer.sharedMaterials = entry.Faded;
+        fadeApplied = true;
+    }
+
+    private void EndCameraRendering(ScriptableRenderContext context, Camera camera)
+    {
+        if (camera == viewCamera) RestorePlayerMaterials();
+    }
+
+    private void RestorePlayerMaterials()
+    {
+        if (!fadeApplied) return;
+        foreach (FadeRenderer entry in fadeRenderers)
+            if (entry.Renderer != null) entry.Renderer.sharedMaterials = entry.Originals;
+        fadeApplied = false;
+    }
+
+    private void ReleaseFadeMaterials()
+    {
+        RestorePlayerMaterials();
+        foreach (FadeRenderer entry in fadeRenderers)
+            foreach (Material material in entry.Faded)
+            {
+                if (material == null) continue;
+                if (Application.isPlaying) Destroy(material);
+                else DestroyImmediate(material);
+            }
+        fadeRenderers.Clear();
+        fadeMaterials.Clear();
+    }
 
     private sealed class FadeMaterial
     {
@@ -76,6 +139,7 @@ public class ThirdPersonCamera : MonoBehaviour
 
     private void Start()
     {
+        pitch = Mathf.Clamp(initialPitch, minPitch, maxPitch);
         FindTarget();
         if (target != null)
         {
@@ -295,6 +359,7 @@ public class ThirdPersonCamera : MonoBehaviour
 
     private void CachePlayerFadeMaterials()
     {
+        ReleaseFadeMaterials();
         cachedFadeTarget = target;
         targetRenderers = target == null
             ? null
@@ -309,9 +374,14 @@ public class ThirdPersonCamera : MonoBehaviour
 
         foreach (Renderer targetRenderer in targetRenderers)
         {
-            Material[] materials = targetRenderer.materials;
-            foreach (Material material in materials)
+            Material[] originals = targetRenderer.sharedMaterials;
+            Material[] materials = new Material[originals.Length];
+            fadeRenderers.Add(new FadeRenderer { Renderer = targetRenderer, Originals = originals, Faded = materials });
+            for (int i = 0; i < originals.Length; i++)
             {
+                if (originals[i] == null) continue;
+                Material material = new Material(originals[i]) { hideFlags = HideFlags.HideAndDontSave };
+                materials[i] = material;
                 int colorProperty = GetColorProperty(material);
                 if (colorProperty == -1)
                 {

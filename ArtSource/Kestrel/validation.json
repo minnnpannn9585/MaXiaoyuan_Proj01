@@ -1,0 +1,26 @@
+{
+  "stage": "structural model and deformation skeleton; no production animations",
+  "vertices": 74951,
+  "triangles": 107180,
+  "bones": 84,
+  "materials": 12,
+  "unweighted_vertices": 0,
+  "invalid_weight_sums": 0,
+  "dimensions_m": [
+    0.7418563365936279,
+    0.3696427345275879,
+    0.2272501438856125
+  ],
+  "animations": [],
+  "deformation_check": {
+    "moved_vertices": 45414,
+    "finite_positions": true,
+    "production_animation": false
+  },
+  "fbx_roundtrip": {
+    "armatures": 1,
+    "meshes": 1,
+    "bones": 84,
+    "skin_modifier": true
+  }
+}

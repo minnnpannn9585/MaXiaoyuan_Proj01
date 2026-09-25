@@ -1,10 +1,9 @@
 using UnityEngine;
+using System.Collections.Generic;
 
 [RequireComponent(typeof(Rigidbody), typeof(Collider))]
 public class HunterMove : MonoBehaviour
 {
-    private const float PhotoSightProbeRadius = 0.07f;
-
     private enum HunterState
     {
         Search,
@@ -38,6 +37,14 @@ public class HunterMove : MonoBehaviour
     [SerializeField] private float eyeHeight = 0.65f;
     [SerializeField] private float lostSightGrace = 0.45f;
     [SerializeField] private LayerMask visionLayers = ~0;
+    [Tooltip("Seconds between rendered visibility checks. Shutter release always performs a fresh check.")]
+    [SerializeField, Min(0.05f)] private float visibilityCheckInterval = 0.25f;
+    private readonly Dictionary<int, VisibilitySample> visibilitySamples = new Dictionary<int, VisibilitySample>();
+    private struct VisibilitySample
+    {
+        public float Time;
+        public float Fraction;
+    }
 
     [Header("Aim and fire")]
     [Tooltip("Time for tracking oscillation to settle by approximately 99 percent.")]
@@ -108,7 +115,7 @@ public class HunterMove : MonoBehaviour
     [Tooltip("Minimum linear player projection required for a successful photo.")]
     [SerializeField, Range(0f, 1f)]
     private float minimumSuccessfulFrameCoverage = 0.2f;
-    [Tooltip("Minimum fraction of the player's collider silhouette that must be unobstructed.")]
+    [Tooltip("Minimum visible fraction of the player's rendered in-frame silhouette. Includes visual occluders without colliders and alpha-cutout foliage.")]
     [SerializeField, Range(0f, 1f)]
     private float minimumVisibleSubjectFraction = 0.8f;
 
@@ -447,6 +454,14 @@ public class HunterMove : MonoBehaviour
         if (aimLocked &&
             captureReadyTimer >= lockedWarningDuration)
         {
+            // Never expose using an old cached observation after an occluder moved in.
+            float visibility = GetRenderedVisibility(player, aimPoint - GetEyePosition(), true);
+            if (visibility <= 0f || visibility < minimumVisibleSubjectFraction)
+            {
+                aimLocked = false;
+                captureReadyTimer = 0f;
+                return;
+            }
             Fire();
             state = HunterState.Cooldown;
             stateTimer = 0f;
@@ -921,89 +936,28 @@ public class HunterMove : MonoBehaviour
         out Vector3 visiblePoint)
     {
         visiblePoint = Vector3.zero;
-        if (candidate == null || !candidate.isActiveAndEnabled)
-        {
-            return false;
-        }
-
+        if (candidate == null || !candidate.isActiveAndEnabled) return false;
         Collider targetCollider = candidate.GetComponent<Collider>();
-        Bounds targetBounds = targetCollider.bounds;
-        Vector3 center = targetBounds.center;
-        Vector3 upperPoint = new Vector3(
-            center.x,
-            Mathf.Lerp(targetBounds.min.y, targetBounds.max.y, 0.8f),
-            center.z);
-        Vector3 lowerPoint = new Vector3(
-            center.x,
-            Mathf.Lerp(targetBounds.min.y, targetBounds.max.y, 0.2f),
-            center.z);
-
-        Vector3 origin = GetEyePosition();
-        if (HasClearProjectilePath(origin, center, candidate, maxDistance))
-        {
-            visiblePoint = center;
-            return true;
-        }
-
-        if (HasClearProjectilePath(origin, upperPoint, candidate, maxDistance))
-        {
-            visiblePoint = upperPoint;
-            return true;
-        }
-
-        if (HasClearProjectilePath(origin, lowerPoint, candidate, maxDistance))
-        {
-            visiblePoint = lowerPoint;
-            return true;
-        }
-
-        return false;
+        visiblePoint = targetCollider != null ? targetCollider.bounds.center : candidate.transform.position;
+        Vector3 direction = visiblePoint - GetEyePosition();
+        if (direction.sqrMagnitude < 0.000001f || direction.magnitude > maxDistance) return false;
+        float fraction = GetRenderedVisibility(candidate, direction, false);
+        return fraction > 0f && fraction >= minimumVisibleSubjectFraction;
     }
 
-    private bool HasClearProjectilePath(
-        Vector3 origin,
-        Vector3 targetPoint,
-        PlayerMove candidate,
-        float maxDistance)
+    private float GetRenderedVisibility(PlayerMove candidate, Vector3 direction, bool force)
     {
-        Vector3 direction = targetPoint - origin;
-        float distance = direction.magnitude;
-        if (distance < 0.001f || distance > maxDistance)
-        {
-            return false;
-        }
-
-        RaycastHit[] hits = Physics.SphereCastAll(
-            origin,
-            PhotoSightProbeRadius,
-            direction.normalized,
-            distance + 0.1f,
-            visionLayers,
-            QueryTriggerInteraction.Ignore);
-
-        Collider closestCollider = null;
-        float closestDistance = float.MaxValue;
-        foreach (RaycastHit hit in hits)
-        {
-            if (hit.collider == null ||
-                hit.collider == bodyCollider ||
-                hit.transform == transform ||
-                hit.transform.IsChildOf(transform))
-            {
-                continue;
-            }
-
-            if (hit.distance < closestDistance)
-            {
-                closestDistance = hit.distance;
-                closestCollider = hit.collider;
-            }
-        }
-
-        return closestCollider != null &&
-               closestCollider.GetComponentInParent<PlayerMove>() == candidate;
+        if (candidate == null || !candidate.isActiveAndEnabled) return 0f;
+        int id = candidate.GetInstanceID();
+        if (!force && visibilitySamples.TryGetValue(id, out VisibilitySample sample) &&
+            Time.time - sample.Time < visibilityCheckInterval)
+            return sample.Fraction;
+        TakePhoto photography = GetComponent<TakePhoto>();
+        float fraction = photography == null ? 0f : photography.MeasureTrackingVisibility(
+            GetEyePosition(), direction, candidate.transform, photoFocalLength);
+        visibilitySamples[id] = new VisibilitySample { Time = Time.time, Fraction = fraction };
+        return fraction;
     }
-
     private bool TryAcquireVisiblePlayer()
     {
         PlayerMove visiblePlayer = FindBestVisiblePlayer();
@@ -1131,7 +1085,29 @@ public class HunterMove : MonoBehaviour
 
         float blockedRatio = 1f - Mathf.Clamp01(forwardClearance / obstacleCheckDistance);
         float steerAngle = avoidanceAngle * Mathf.Lerp(0.45f, 1f, blockedRatio) * avoidanceSide;
-        return (Quaternion.AngleAxis(steerAngle, Vector3.up) * desiredDirection).normalized;
+        Vector3 steering = (Quaternion.AngleAxis(steerAngle, Vector3.up) * desiredDirection).normalized;
+        if (GetObstacleClearance(steering) >= Mathf.Min(0.4f, obstacleCheckDistance))
+            return steering;
+
+        // Both forward diagonals can point into a broad tree/rock. Permit a lateral
+        // detour or retreat rather than repeatedly alternating two blocked headings.
+        Vector3 bestDirection = steering;
+        float bestScore = GetObstacleClearance(steering);
+        for (int side = 0; side < 2; side++)
+        {
+            float sign = side == 0 ? avoidanceSide : -avoidanceSide;
+            for (int angle = 90; angle <= 180; angle += 45)
+            {
+                Vector3 candidate = Quaternion.AngleAxis(angle * sign, Vector3.up) * desiredDirection;
+                float clearance = GetObstacleClearance(candidate);
+                float score = clearance + Vector3.Dot(candidate, desiredDirection) * 0.15f;
+                if (side == 0) score += 0.05f;
+                if (score <= bestScore) continue;
+                bestScore = score;
+                bestDirection = candidate;
+            }
+        }
+        return bestDirection.normalized;
     }
 
     private float CalculateSafeMovementSpeed(Vector3 direction, float requestedSpeed)
@@ -1148,10 +1124,11 @@ public class HunterMove : MonoBehaviour
 
     private float GetObstacleClearance(Vector3 direction)
     {
-        Vector3 origin = transform.position + Vector3.up * obstacleCheckHeight;
-        RaycastHit[] hits = Physics.SphereCastAll(
-            origin,
-            GetRequiredAvoidanceRadius(),
+        GetAvoidanceCapsule(out Vector3 bottom, out Vector3 top, out float radius);
+        RaycastHit[] hits = Physics.CapsuleCastAll(
+            bottom,
+            top,
+            radius,
             direction,
             obstacleCheckDistance,
             obstacleLayers,
@@ -1160,11 +1137,7 @@ public class HunterMove : MonoBehaviour
         float clearance = obstacleCheckDistance;
         foreach (RaycastHit hit in hits)
         {
-            if (hit.collider == null ||
-                hit.collider == bodyCollider ||
-                hit.transform == transform ||
-                hit.transform.IsChildOf(transform) ||
-                hit.collider.GetComponentInParent<PlayerMove>() != null)
+            if (ShouldIgnoreObstacle(hit.collider) || hit.normal.y >= 0.65f)
             {
                 continue;
             }
@@ -1177,11 +1150,11 @@ public class HunterMove : MonoBehaviour
 
     private bool TryGetSeparationDirection(out Vector3 separationDirection)
     {
-        Vector3 origin = transform.position + Vector3.up * obstacleCheckHeight;
-        float requiredRadius = GetRequiredAvoidanceRadius();
-        Collider[] overlaps = Physics.OverlapSphere(
-            origin,
-            requiredRadius,
+        GetAvoidanceCapsule(out Vector3 bottom, out Vector3 top, out float radius);
+        Collider[] overlaps = Physics.OverlapCapsule(
+            bottom,
+            top,
+            radius,
             obstacleLayers,
             QueryTriggerInteraction.Ignore);
 
@@ -1193,20 +1166,15 @@ public class HunterMove : MonoBehaviour
                 continue;
             }
 
-            Vector3 closestPoint = obstacle.ClosestPoint(origin);
-            Vector3 away = origin - closestPoint;
+            // Resolve real body penetration, not a guessed vector from a high probe.
+            if (!Physics.ComputePenetration(bodyCollider, transform.position, transform.rotation,
+                obstacle, obstacle.transform.position, obstacle.transform.rotation,
+                out Vector3 away, out float penetration) || away.y >= 0.65f)
+            {
+                continue;
+            }
             away.y = 0f;
-            if (away.sqrMagnitude < 0.0001f)
-            {
-                away = transform.position - obstacle.bounds.center;
-                away.y = 0f;
-            }
-
-            float distance = away.magnitude;
-            if (distance > 0.0001f && distance < requiredRadius)
-            {
-                separation += away.normalized * (requiredRadius - distance);
-            }
+            if (away.sqrMagnitude > 0.0001f) separation += away.normalized * penetration;
         }
 
         separationDirection = separation.sqrMagnitude > 0.0001f
@@ -1220,6 +1188,17 @@ public class HunterMove : MonoBehaviour
         Bounds bounds = bodyCollider.bounds;
         float bodyRadius = Mathf.Max(bounds.extents.x, bounds.extents.z);
         return Mathf.Max(obstacleCheckRadius, bodyRadius + minimumObstacleClearance);
+    }
+
+    private void GetAvoidanceCapsule(out Vector3 bottom, out Vector3 top, out float radius)
+    {
+        Bounds bounds = bodyCollider.bounds;
+        radius = GetRequiredAvoidanceRadius();
+        // A small foot clearance avoids treating the supporting ground as a wall.
+        float bottomY = bounds.min.y + radius + 0.06f;
+        float topY = Mathf.Max(bottomY, bounds.max.y - radius);
+        bottom = new Vector3(bounds.center.x, bottomY, bounds.center.z);
+        top = new Vector3(bounds.center.x, topY, bounds.center.z);
     }
 
     private bool ShouldIgnoreObstacle(Collider obstacle)

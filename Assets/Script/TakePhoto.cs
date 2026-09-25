@@ -40,6 +40,7 @@ public class TakePhoto : MonoBehaviour
     private readonly List<Texture2D> photos = new List<Texture2D>();
     private readonly List<bool> photoAccepted = new List<bool>();
     private readonly List<bool> photoCapturedPlayers = new List<bool>();
+    private readonly List<bool> photoSubjectsInFrame = new List<bool>();
     private readonly List<float> photoMtf50Retentions = new List<float>();
     private readonly List<float> photoBlurLengths = new List<float>();
     private readonly List<float> photoExposureStops = new List<float>();
@@ -67,6 +68,8 @@ public class TakePhoto : MonoBehaviour
     private readonly List<bool> hunterRendererStates = new List<bool>();
     private readonly List<Renderer> hunterRenderers = new List<Renderer>();
 
+    private readonly PhotoVisibility photoVisibility = new PhotoVisibility();
+    private readonly PhotoVisibility trackingVisibility = new PhotoVisibility();
     private Camera photoCamera;
     private RenderTexture photoTarget;
     private Texture2D exposureReadback;
@@ -91,6 +94,8 @@ public class TakePhoto : MonoBehaviour
 
     private void OnDestroy()
     {
+        photoVisibility.Dispose();
+        trackingVisibility.Dispose();
         if (Instance == this)
         {
             Instance = null;
@@ -133,6 +138,7 @@ public class TakePhoto : MonoBehaviour
         photos.Clear();
         photoAccepted.Clear();
         photoCapturedPlayers.Clear();
+        photoSubjectsInFrame.Clear();
         photoMtf50Retentions.Clear();
         photoBlurLengths.Clear();
         photoExposureStops.Clear();
@@ -163,6 +169,26 @@ public class TakePhoto : MonoBehaviour
         if (backpackOpen && selectedPhotoIndex >= 0 && Input.GetKeyDown(KeyCode.Escape))
         {
             selectedPhotoIndex = -1;
+        }
+    }
+
+    public float MeasureTrackingVisibility(Vector3 origin, Vector3 direction, Transform subject,
+        float focalLengthMillimeters)
+    {
+        if (subject == null || direction.sqrMagnitude < 0.0001f) return 0f;
+        EnsurePhotoCamera();
+        ConfigurePhotoCameraFromMain(focalLengthMillimeters);
+        photoCamera.transform.SetPositionAndRotation(
+            origin + direction.normalized * cameraForwardOffset,
+            Quaternion.LookRotation(direction.normalized, Vector3.up));
+        HideHunterFromCapture();
+        try
+        {
+            return trackingVisibility.Measure(photoCamera, subject, 320, 180);
+        }
+        finally
+        {
+            RestoreHunterAfterCapture();
         }
     }
 
@@ -306,6 +332,7 @@ public class TakePhoto : MonoBehaviour
         HideHunterFromCapture();
         RenderTexture previousActive = RenderTexture.active;
         Texture2D photo = null;
+        float subjectVisibilityFraction = 0f;
         try
         {
             if (photoFocusVolume != null &&
@@ -389,6 +416,13 @@ public class TakePhoto : MonoBehaviour
                     blue);
             }
 
+            // Measure at the shutter midpoint, with the hunter still hidden.
+            if (subject != null) subject.position = subjectPosition;
+            photoCamera.transform.SetPositionAndRotation(cameraPosition, cameraRotation);
+            subjectVisibilityFraction = photoVisibility.Measure(
+                photoCamera, subject, Mathf.Min(photoWidth, 640),
+                Mathf.Max(1, Mathf.RoundToInt(Mathf.Min(photoWidth, 640) * photoHeight / (float)photoWidth)));
+
             photo = CreateExposurePhoto(
                 red,
                 green,
@@ -420,9 +454,8 @@ public class TakePhoto : MonoBehaviour
             return false;
         }
 
-        float subjectVisibilityFraction =
-            CalculateSubjectVisibilityFraction(subject);
         bool capturedPlayer =
+            subjectVisibilityFraction > 0f &&
             subjectVisibilityFraction >=
             minimumVisibleSubjectFraction;
         float subjectFrameCoverage =
@@ -552,188 +585,6 @@ public class TakePhoto : MonoBehaviour
         }
 
         return closestPoint;
-    }
-
-    private float CalculateSubjectVisibilityFraction(Transform subject)
-    {
-        if (subject == null ||
-            !TryGetSubjectPixelRect(
-                subject,
-                out RectInt subjectRect,
-                0))
-        {
-            return 0f;
-        }
-
-        Collider[] subjectColliders =
-            subject.GetComponentsInChildren<Collider>(true);
-        if (subjectColliders.Length == 0)
-        {
-            return IsSubjectVisibleInPhoto(subject) ? 1f : 0f;
-        }
-
-        const int samplesPerAxis = 9;
-        int subjectSamples = 0;
-        int visibleSamples = 0;
-        for (int y = 0; y < samplesPerAxis; y++)
-        {
-            for (int x = 0; x < samplesPerAxis; x++)
-            {
-                float pixelX = Mathf.Lerp(
-                    subjectRect.xMin,
-                    subjectRect.xMax,
-                    (x + 0.5f) / samplesPerAxis);
-                float pixelY = Mathf.Lerp(
-                    subjectRect.yMin,
-                    subjectRect.yMax,
-                    (y + 0.5f) / samplesPerAxis);
-                Ray sampleRay = photoCamera.ViewportPointToRay(
-                    new Vector3(
-                        pixelX / photoWidth,
-                        pixelY / photoHeight,
-                        0f));
-                float subjectDistance = float.PositiveInfinity;
-                foreach (Collider subjectCollider in subjectColliders)
-                {
-                    if (subjectCollider != null &&
-                        subjectCollider.enabled &&
-                        subjectCollider.Raycast(
-                            sampleRay,
-                            out RaycastHit subjectHit,
-                            photoCamera.farClipPlane) &&
-                        subjectHit.distance < subjectDistance)
-                    {
-                        subjectDistance = subjectHit.distance;
-                    }
-                }
-
-                if (float.IsPositiveInfinity(subjectDistance))
-                {
-                    continue;
-                }
-
-                subjectSamples++;
-                RaycastHit[] hits = Physics.RaycastAll(
-                    sampleRay,
-                    Mathf.Max(
-                        photoCamera.nearClipPlane,
-                        subjectDistance - 0.001f),
-                    Physics.AllLayers,
-                    QueryTriggerInteraction.Ignore);
-                bool blocked = false;
-                foreach (RaycastHit hit in hits)
-                {
-                    if (hit.collider == null ||
-                        hit.transform == transform ||
-                        hit.transform.IsChildOf(transform) ||
-                        hit.transform == subject ||
-                        hit.transform.IsChildOf(subject))
-                    {
-                        continue;
-                    }
-
-                    blocked = true;
-                    break;
-                }
-
-                if (!blocked)
-                {
-                    visibleSamples++;
-                }
-            }
-        }
-
-        return subjectSamples <= 0
-            ? 0f
-            : visibleSamples / (float)subjectSamples;
-    }
-
-    private bool IsSubjectVisibleInPhoto(Transform subject)
-    {
-        if (subject == null)
-        {
-            return false;
-        }
-
-        Plane[] frustumPlanes = GeometryUtility.CalculateFrustumPlanes(photoCamera);
-        Renderer[] renderers = subject.GetComponentsInChildren<Renderer>(true);
-        foreach (Renderer subjectRenderer in renderers)
-        {
-            if (subjectRenderer == null ||
-                !subjectRenderer.enabled ||
-                !GeometryUtility.TestPlanesAABB(
-                    frustumPlanes,
-                    subjectRenderer.bounds))
-            {
-                continue;
-            }
-
-            Bounds bounds = subjectRenderer.bounds;
-            Vector3 center = bounds.center;
-            Vector3 extents = bounds.extents * 0.85f;
-            Vector3[] visibilityPoints =
-            {
-                center,
-                center + Vector3.up * extents.y,
-                center - Vector3.up * extents.y,
-                center + Vector3.right * extents.x,
-                center - Vector3.right * extents.x,
-                center + Vector3.forward * extents.z,
-                center - Vector3.forward * extents.z
-            };
-
-            foreach (Vector3 point in visibilityPoints)
-            {
-                Vector3 viewport = photoCamera.WorldToViewportPoint(point);
-                if (viewport.z <= photoCamera.nearClipPlane ||
-                    viewport.x < 0f ||
-                    viewport.x > 1f ||
-                    viewport.y < 0f ||
-                    viewport.y > 1f)
-                {
-                    continue;
-                }
-
-                if (HasClearPhotoLine(point, subject))
-                {
-                    return true;
-                }
-            }
-        }
-
-        return false;
-    }
-
-    private bool HasClearPhotoLine(Vector3 point, Transform subject)
-    {
-        Vector3 direction = point - photoCamera.transform.position;
-        float distance = direction.magnitude;
-        if (distance <= photoCamera.nearClipPlane)
-        {
-            return true;
-        }
-
-        RaycastHit[] hits = Physics.RaycastAll(
-            photoCamera.transform.position,
-            direction / distance,
-            distance,
-            Physics.AllLayers,
-            QueryTriggerInteraction.Ignore);
-        foreach (RaycastHit hit in hits)
-        {
-            if (hit.collider == null ||
-                hit.transform == transform ||
-                hit.transform.IsChildOf(transform) ||
-                hit.transform == subject ||
-                hit.transform.IsChildOf(subject))
-            {
-                continue;
-            }
-
-            return false;
-        }
-
-        return true;
     }
 
     private static float CalculateMtf50Retention(
@@ -1346,6 +1197,7 @@ public class TakePhoto : MonoBehaviour
         photos.Add(photo);
         photoAccepted.Add(accepted);
         photoCapturedPlayers.Add(capturedPlayer);
+        photoSubjectsInFrame.Add(photoVisibility.SubjectPixelCount >= 1f);
         photoMtf50Retentions.Add(mtf50Retention);
         photoBlurLengths.Add(blurLengthPixels);
         photoExposureStops.Add(exposureStops);
@@ -1370,6 +1222,7 @@ public class TakePhoto : MonoBehaviour
             photos.RemoveAt(0);
             photoAccepted.RemoveAt(0);
             photoCapturedPlayers.RemoveAt(0);
+            photoSubjectsInFrame.RemoveAt(0);
             photoMtf50Retentions.RemoveAt(0);
             photoBlurLengths.RemoveAt(0);
             photoExposureStops.RemoveAt(0);
@@ -1906,7 +1759,8 @@ public class TakePhoto : MonoBehaviour
                 24f),
             $"{GetPhotoResultLabel(photoIndex)}    " +
             $"Frame {photoSubjectFrameCoverages[photoIndex]:P0}    " +
-            $"Visible {photoSubjectVisibilityFractions[photoIndex]:P0}    " +
+            $"Visible {photoSubjectVisibilityFractions[photoIndex]:P0} / " +
+            $"Occluded {1f - photoSubjectVisibilityFractions[photoIndex]:P0}    " +
             $"Motion {photoBlurLengths[photoIndex]:F1}px    " +
             $"Defocus {photoDefocusBlurDiameters[photoIndex]:F1}px",
             overlayHintStyle);
@@ -1986,7 +1840,7 @@ public class TakePhoto : MonoBehaviour
 
         if (!photoCapturedPlayers[photoIndex])
         {
-            if (photoSubjectVisibilityFractions[photoIndex] > 0f)
+            if (photoSubjectsInFrame[photoIndex])
             {
                 return
                     $"FAILED  OCCLUDED " +

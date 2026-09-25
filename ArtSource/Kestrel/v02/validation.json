@@ -1,0 +1,16 @@
+{
+  "scope": "Model only; no animation",
+  "vertices": 105874,
+  "triangles": 200016,
+  "materials": 9,
+  "shape_keys": [
+    "Basis",
+    "Folded_Wings_Review"
+  ],
+  "actions": 0,
+  "finite_vertices": true,
+  "atlas_size": [
+    1254,
+    1254
+  ]
+}
