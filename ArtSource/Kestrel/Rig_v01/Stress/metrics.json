@@ -1,0 +1,38 @@
+{
+  "HighUp": {
+    "finite": true,
+    "edge_ratio_p99": 1.9143180564666267,
+    "edge_ratio_max": 4.578740790333095,
+    "edges_stretched_over_2x": 514
+  },
+  "DeepDown": {
+    "finite": true,
+    "edge_ratio_p99": 1.135982263917018,
+    "edge_ratio_max": 3.178329135774816,
+    "edges_stretched_over_2x": 97
+  },
+  "Fold": {
+    "finite": true,
+    "edge_ratio_p99": 2.4988401702440566,
+    "edge_ratio_max": 5.240386816141515,
+    "edges_stretched_over_2x": 1109
+  },
+  "LegTuck": {
+    "finite": true,
+    "edge_ratio_p99": 1.6091647517763703,
+    "edge_ratio_max": 4.8948437955518225,
+    "edges_stretched_over_2x": 287
+  },
+  "Grasp": {
+    "finite": true,
+    "edge_ratio_p99": 1.0501197268306357,
+    "edge_ratio_max": 1.5888602373923046,
+    "edges_stretched_over_2x": 0
+  },
+  "TailTurn": {
+    "finite": true,
+    "edge_ratio_p99": 1.7292122437484794,
+    "edge_ratio_max": 3.8776149602269867,
+    "edges_stretched_over_2x": 418
+  }
+}

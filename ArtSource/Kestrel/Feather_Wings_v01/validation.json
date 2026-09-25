@@ -1,0 +1,236 @@
+{
+  "source": "C:\\Users\\33709\\Documents\\GitHub\\MaXiaoyuan_Proj01\\ArtSource\\Kestrel\\Rig_v01\\Kestrel_Rig_v01.blend",
+  "feather_count": 38,
+  "feathers": [
+    {
+      "name": "FlightFeather_01.L",
+      "vertices": 308,
+      "closed_mesh": true,
+      "weight": "FlightFeather_01.L"
+    },
+    {
+      "name": "FlightFeather_02.L",
+      "vertices": 274,
+      "closed_mesh": true,
+      "weight": "FlightFeather_02.L"
+    },
+    {
+      "name": "FlightFeather_03.L",
+      "vertices": 260,
+      "closed_mesh": true,
+      "weight": "FlightFeather_03.L"
+    },
+    {
+      "name": "FlightFeather_04.L",
+      "vertices": 272,
+      "closed_mesh": true,
+      "weight": "FlightFeather_04.L"
+    },
+    {
+      "name": "FlightFeather_05.L",
+      "vertices": 286,
+      "closed_mesh": true,
+      "weight": "FlightFeather_05.L"
+    },
+    {
+      "name": "FlightFeather_06.L",
+      "vertices": 488,
+      "closed_mesh": true,
+      "weight": "FlightFeather_06.L"
+    },
+    {
+      "name": "FlightFeather_07.L",
+      "vertices": 286,
+      "closed_mesh": true,
+      "weight": "FlightFeather_07.L"
+    },
+    {
+      "name": "FlightFeather_08.L",
+      "vertices": 618,
+      "closed_mesh": true,
+      "weight": "FlightFeather_08.L"
+    },
+    {
+      "name": "FlightFeather_09.L",
+      "vertices": 300,
+      "closed_mesh": true,
+      "weight": "FlightFeather_09.L"
+    },
+    {
+      "name": "FlightFeather_10.L",
+      "vertices": 646,
+      "closed_mesh": true,
+      "weight": "FlightFeather_10.L"
+    },
+    {
+      "name": "FlightFeather_11.L",
+      "vertices": 732,
+      "closed_mesh": true,
+      "weight": "FlightFeather_11.L"
+    },
+    {
+      "name": "FlightFeather_12.L",
+      "vertices": 726,
+      "closed_mesh": true,
+      "weight": "FlightFeather_12.L"
+    },
+    {
+      "name": "FlightFeather_13.L",
+      "vertices": 742,
+      "closed_mesh": true,
+      "weight": "FlightFeather_13.L"
+    },
+    {
+      "name": "FlightFeather_14.L",
+      "vertices": 864,
+      "closed_mesh": true,
+      "weight": "FlightFeather_14.L"
+    },
+    {
+      "name": "FlightFeather_15.L",
+      "vertices": 870,
+      "closed_mesh": true,
+      "weight": "FlightFeather_15.L"
+    },
+    {
+      "name": "FlightFeather_16.L",
+      "vertices": 1094,
+      "closed_mesh": true,
+      "weight": "FlightFeather_16.L"
+    },
+    {
+      "name": "FlightFeather_17.L",
+      "vertices": 864,
+      "closed_mesh": true,
+      "weight": "FlightFeather_17.L"
+    },
+    {
+      "name": "FlightFeather_18.L",
+      "vertices": 860,
+      "closed_mesh": true,
+      "weight": "FlightFeather_18.L"
+    },
+    {
+      "name": "FlightFeather_19.L",
+      "vertices": 526,
+      "closed_mesh": true,
+      "weight": "FlightFeather_19.L"
+    },
+    {
+      "name": "FlightFeather_01.R",
+      "vertices": 308,
+      "closed_mesh": true,
+      "weight": "FlightFeather_01.R"
+    },
+    {
+      "name": "FlightFeather_02.R",
+      "vertices": 274,
+      "closed_mesh": true,
+      "weight": "FlightFeather_02.R"
+    },
+    {
+      "name": "FlightFeather_03.R",
+      "vertices": 260,
+      "closed_mesh": true,
+      "weight": "FlightFeather_03.R"
+    },
+    {
+      "name": "FlightFeather_04.R",
+      "vertices": 272,
+      "closed_mesh": true,
+      "weight": "FlightFeather_04.R"
+    },
+    {
+      "name": "FlightFeather_05.R",
+      "vertices": 286,
+      "closed_mesh": true,
+      "weight": "FlightFeather_05.R"
+    },
+    {
+      "name": "FlightFeather_06.R",
+      "vertices": 488,
+      "closed_mesh": true,
+      "weight": "FlightFeather_06.R"
+    },
+    {
+      "name": "FlightFeather_07.R",
+      "vertices": 286,
+      "closed_mesh": true,
+      "weight": "FlightFeather_07.R"
+    },
+    {
+      "name": "FlightFeather_08.R",
+      "vertices": 618,
+      "closed_mesh": true,
+      "weight": "FlightFeather_08.R"
+    },
+    {
+      "name": "FlightFeather_09.R",
+      "vertices": 300,
+      "closed_mesh": true,
+      "weight": "FlightFeather_09.R"
+    },
+    {
+      "name": "FlightFeather_10.R",
+      "vertices": 646,
+      "closed_mesh": true,
+      "weight": "FlightFeather_10.R"
+    },
+    {
+      "name": "FlightFeather_11.R",
+      "vertices": 732,
+      "closed_mesh": true,
+      "weight": "FlightFeather_11.R"
+    },
+    {
+      "name": "FlightFeather_12.R",
+      "vertices": 726,
+      "closed_mesh": true,
+      "weight": "FlightFeather_12.R"
+    },
+    {
+      "name": "FlightFeather_13.R",
+      "vertices": 742,
+      "closed_mesh": true,
+      "weight": "FlightFeather_13.R"
+    },
+    {
+      "name": "FlightFeather_14.R",
+      "vertices": 864,
+      "closed_mesh": true,
+      "weight": "FlightFeather_14.R"
+    },
+    {
+      "name": "FlightFeather_15.R",
+      "vertices": 870,
+      "closed_mesh": true,
+      "weight": "FlightFeather_15.R"
+    },
+    {
+      "name": "FlightFeather_16.R",
+      "vertices": 1094,
+      "closed_mesh": true,
+      "weight": "FlightFeather_16.R"
+    },
+    {
+      "name": "FlightFeather_17.R",
+      "vertices": 864,
+      "closed_mesh": true,
+      "weight": "FlightFeather_17.R"
+    },
+    {
+      "name": "FlightFeather_18.R",
+      "vertices": 860,
+      "closed_mesh": true,
+      "weight": "FlightFeather_18.R"
+    },
+    {
+      "name": "FlightFeather_19.R",
+      "vertices": 526,
+      "closed_mesh": true,
+      "weight": "FlightFeather_19.R"
+    }
+  ],
+  "protected_original_faces": 31707,
+  "animations": 0
+}

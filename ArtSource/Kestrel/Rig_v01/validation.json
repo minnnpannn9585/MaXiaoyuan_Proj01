@@ -1,0 +1,26 @@
+{
+  "source": "C:\\Users\\33709\\Documents\\GitHub\\MaXiaoyuan_Proj01\\ArtSource\\Kestrel\\Toes_Only_v2\\Kestrel_Toes_Only_v2.blend",
+  "source_unchanged": true,
+  "geometry_unchanged": true,
+  "vertices": 20368,
+  "faces": 36734,
+  "bones": 45,
+  "max_influences": 4,
+  "unweighted_vertices": 0,
+  "max_weight_sum_error": 4.470348358154297e-08,
+  "animations": 0,
+  "pose_checks": [
+    {
+      "pose": "WingsUp",
+      "moved_vertices": 13444
+    },
+    {
+      "pose": "WingsDown",
+      "moved_vertices": 13444
+    },
+    {
+      "pose": "ToeCurl",
+      "moved_vertices": 3299
+    }
+  ]
+}

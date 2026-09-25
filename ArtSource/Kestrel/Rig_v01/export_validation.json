@@ -1,0 +1,18 @@
+{
+  "fbx": {
+    "bones": 45,
+    "vertices": 20368,
+    "weighted_vertices": 20368,
+    "animations": 0,
+    "armature_deforms_mesh": true,
+    "moved_vertices": 4863
+  },
+  "glb": {
+    "bones": 45,
+    "vertices": 20368,
+    "weighted_vertices": 20368,
+    "animations": 0,
+    "armature_deforms_mesh": true,
+    "moved_vertices": 4863
+  }
+}
