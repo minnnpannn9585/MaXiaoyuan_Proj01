@@ -1,0 +1,84 @@
+{
+  "source": "C:\\Users\\33709\\Documents\\GitHub\\MaXiaoyuan_Proj01\\ArtSource\\Kestrel\\falcon in flight 3d model_repaired.glb",
+  "bytes": 731972,
+  "gltf_asset": {
+    "generator": "Khronos glTF Blender I/O v3.6.27",
+    "version": "2.0"
+  },
+  "gltf_meshes": 1,
+  "gltf_skins": 0,
+  "gltf_animations": [],
+  "gltf_images": [],
+  "gltf_materials": [
+    {
+      "name": "material",
+      "pbrMetallicRoughness": {
+        "metallicFactor": 0,
+        "roughnessFactor": 0.5
+      }
+    }
+  ],
+  "meshes": [
+    {
+      "name": "Kestrel_Repaired",
+      "vertices": 20968,
+      "faces": 37960,
+      "triangles": 37960,
+      "materials": [
+        "material"
+      ],
+      "uv_layers": [],
+      "shape_keys": [],
+      "vertex_groups": 0,
+      "modifiers": [],
+      "loose_vertices": 0,
+      "boundary_edges": 3746,
+      "nonmanifold_edges": 3746,
+      "connected_component_sizes": [
+        7515,
+        1990,
+        1990,
+        972,
+        832,
+        535,
+        346,
+        343,
+        324,
+        307,
+        268,
+        267,
+        259,
+        252,
+        241,
+        241,
+        212,
+        211,
+        191,
+        191,
+        186,
+        185,
+        164,
+        162,
+        158,
+        150,
+        146,
+        145,
+        145,
+        132
+      ],
+      "connected_components": 93
+    }
+  ],
+  "armatures": [],
+  "images": [],
+  "world_dimensions": [
+    0.99951171875,
+    0.38427734375,
+    0.43505859375
+  ],
+  "center": [
+    0.0,
+    0.0,
+    0.217529296875
+  ]
+}

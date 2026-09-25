@@ -1,0 +1,12 @@
+{
+  "input_vertices": 20719,
+  "input_faces": 37569,
+  "loaded_vertices": 20968,
+  "loaded_faces": 37569,
+  "output_vertices": 20968,
+  "output_faces": 37965,
+  "remaining_boundary_loops": 66,
+  "filled_holes": 65,
+  "max_vertex_displacement": 0.0,
+  "removed_vertex_max_distance": 0.0
+}

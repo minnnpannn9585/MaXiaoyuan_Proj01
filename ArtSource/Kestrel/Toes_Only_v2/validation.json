@@ -1,0 +1,24 @@
+{
+  "source": "C:\\Users\\33709\\Documents\\GitHub\\MaXiaoyuan_Proj01\\ArtSource\\Kestrel\\falcon in flight 3d model_repaired.glb",
+  "source_sha256": "645a86a63b1c6a139350ae5a46f439e64f4f7cddad9ac00c086c01bfe2060d7a",
+  "feet": [
+    {
+      "side": -1,
+      "removed_original_vertices": 326,
+      "cut_height": 0.074,
+      "closed_root_edges": 25
+    },
+    {
+      "side": 1,
+      "removed_original_vertices": 326,
+      "cut_height": 0.074,
+      "closed_root_edges": 27
+    }
+  ],
+  "unrelated_source_faces_preserved_exactly": 36626,
+  "unexpected_missing_faces": 0,
+  "unrelated_vertices_preserved_exactly": true,
+  "closed_cut_seams": true,
+  "operation": "Connected extra toes only; no remeshing, smoothing or mouth modification.",
+  "source_unchanged": true
+}

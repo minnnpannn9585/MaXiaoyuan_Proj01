@@ -1,0 +1,21 @@
+{
+  "source": "C:\\Users\\33709\\Documents\\GitHub\\MaXiaoyuan_Proj01\\ArtSource\\Kestrel\\falcon in flight 3d model_repaired.glb",
+  "source_sha256": "645a86a63b1c6a139350ae5a46f439e64f4f7cddad9ac00c086c01bfe2060d7a",
+  "operation": "Remove two downward extra toes only. No remesh, smoothing, projection or mouth edit.",
+  "feet": [
+    {
+      "side": -1,
+      "removed_vertices": 369,
+      "root_caps": 1
+    },
+    {
+      "side": 1,
+      "removed_vertices": 369,
+      "root_caps": 1
+    }
+  ],
+  "original_vertices_outside_extra_toes_preserved_exactly": true,
+  "head_vertices_preserved_exactly": true,
+  "triangles": 36660,
+  "source_unchanged": true
+}

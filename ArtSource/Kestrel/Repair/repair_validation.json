@@ -1,0 +1,25 @@
+{
+  "source_sha256": "fd3cbee4feb87acb0a2bed688e8b5dfb2d0a349e0b6495a9298536bd0b72972d",
+  "source_unchanged": true,
+  "removed_final_degenerate_faces": 5,
+  "repaired_mesh": {
+    "vertices": 20968,
+    "triangles": 37960,
+    "boundary_edges": 3746,
+    "overconnected_edges": 0,
+    "wire_edges": 0,
+    "degenerate_faces": 0,
+    "inconsistent_manifold_edges": 0
+  },
+  "reimported_glb": {
+    "vertices": 20968,
+    "triangles": 37960,
+    "boundary_edges": 3746,
+    "overconnected_edges": 0,
+    "wire_edges": 0,
+    "degenerate_faces": 0,
+    "inconsistent_manifold_edges": 0
+  },
+  "target": "C:\\Users\\33709\\Documents\\GitHub\\MaXiaoyuan_Proj01\\ArtSource\\Kestrel\\falcon in flight 3d model_repaired.glb",
+  "policy": "Preserve coordinates and separate feather sheets; repair nonmanifold edge connections and winding; close small boundary loops up to 20 edges, retain larger boundaries."
+}

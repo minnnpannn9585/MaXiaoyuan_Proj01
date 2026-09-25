@@ -1,0 +1,31 @@
+{
+  "source_sha256": "645a86a63b1c6a139350ae5a46f439e64f4f7cddad9ac00c086c01bfe2060d7a",
+  "feet": [
+    {
+      "side": "R",
+      "removed_extra_digit_vertices": 369,
+      "quads": 1541,
+      "faces": 1541,
+      "boundary_edges": 0,
+      "overconnected_edges": 0,
+      "max_projection_distance": 0.0019206160213798285
+    },
+    {
+      "side": "L",
+      "removed_extra_digit_vertices": 369,
+      "quads": 1674,
+      "faces": 1674,
+      "boundary_edges": 0,
+      "overconnected_edges": 0,
+      "max_projection_distance": 0.001604336779564619
+    }
+  ],
+  "mouth": {
+    "selected_triangles": 2120,
+    "created_quads": 870,
+    "method": "Local triangle pairing, unchanged vertex positions; mouth seam and nostrils retained. No jaw articulation claimed."
+  },
+  "triangles": 39128,
+  "preserved_talons": 8,
+  "source_unchanged": true
+}
