@@ -46,10 +46,13 @@ public static class PhotoVisibilityChecks
 
             blocker.SetActive(false);
             Check(results, "unobstructed", measure.Measure(camera, subject.transform, 256, 256), 1f);
+            CheckArea(results, "2x2 subject in 4x4 frame", measure.VisibleFrameCoverage, .25f);
             blocker.SetActive(true);
             Check(results, "full coverage without Collider", measure.Measure(camera, subject.transform, 256, 256), 0f);
+            CheckArea(results, "fully hidden area", measure.VisibleFrameCoverage, 0f);
             blocker.transform.position = new Vector3(1, 0, 5);
             Check(results, "half coverage without Collider", measure.Measure(camera, subject.transform, 256, 256), 0.5f);
+            CheckArea(results, "half-hidden area", measure.VisibleFrameCoverage, .125f);
             blocker.transform.position = new Vector3(0, 0, 15);
             Check(results, "blocker behind subject", measure.Measure(camera, subject.transform, 256, 256), 1f);
 
@@ -65,6 +68,22 @@ public static class PhotoVisibilityChecks
             blockerMaterial.SetFloat("_AlphaClip", 1);
             blockerMaterial.EnableKeyword("_ALPHATEST_ON");
             Check(results, "alpha-clipped leaf holes", measure.Measure(camera, subject.transform, 256, 256), 0.5f);
+            CheckArea(results, "leaf holes area", measure.VisibleFrameCoverage, .125f);
+
+            blocker.SetActive(false);
+            subjectMaterial.SetTexture("_BaseMap", cutout);
+            subjectMaterial.SetFloat("_AlphaClip", 1);
+            subjectMaterial.EnableKeyword("_ALPHATEST_ON");
+            Check(results, "cutout subject visibility", measure.Measure(camera, subject.transform, 256, 256), 1f);
+            CheckArea(results, "subject transparent pixels excluded", measure.VisibleFrameCoverage, .125f);
+            subjectMaterial.DisableKeyword("_ALPHATEST_ON");
+            subjectMaterial.SetFloat("_AlphaClip", 0);
+            subjectMaterial.SetTexture("_BaseMap", Texture2D.whiteTexture);
+            subject.transform.position = new Vector3(2, 0, 10);
+            measure.Measure(camera, subject.transform, 256, 256);
+            CheckArea(results, "half outside frame", measure.VisibleFrameCoverage, .125f);
+            subject.transform.position = new Vector3(0, 0, 10);
+            blocker.SetActive(true);
 
             blockerMaterial.DisableKeyword("_ALPHATEST_ON");
             blockerMaterial.SetFloat("_AlphaClip", 0);
@@ -77,10 +96,15 @@ public static class PhotoVisibilityChecks
             blockerMaterial.SetColor("_BaseColor", new Color(0, 1, 0, 0.5f));
             blockerMaterial.renderQueue = 3000;
             Check(results, "50% transparent foreground", measure.Measure(camera, subject.transform, 256, 256), 0.5f);
+            CheckArea(results, "transparent foreground weighted area", measure.VisibleFrameCoverage, .125f);
             subject.transform.position = new Vector3(10, 0, 10);
             Check(results, "outside frame", measure.Measure(camera, subject.transform, 256, 256), 0f);
+            CheckArea(results, "outside frame area", measure.VisibleFrameCoverage, 0f);
             subject.transform.position = new Vector3(0, 0, -10);
             Check(results, "behind camera", measure.Measure(camera, subject.transform, 256, 256), 0f);
+            CheckArea(results, "behind camera area", measure.VisibleFrameCoverage, 0f);
+            measure.Measure(camera, null, 256, 256);
+            CheckArea(results, "no stale area for missing subject", measure.VisibleFrameCoverage, 0f);
             var restored = new MaterialPropertyBlock();
             subject.GetComponent<Renderer>().GetPropertyBlock(restored);
             if (subject.GetComponent<Renderer>().sharedMaterial != subjectMaterial || restored.GetColor("_BaseColor") != Color.red)
@@ -146,6 +170,13 @@ public static class PhotoVisibilityChecks
     {
         if (Mathf.Abs(actual - expected) > 0.04f)
             throw new Exception(label + ": expected " + expected + ", got " + actual);
+        results.Add(label + ": " + actual.ToString("P1") + " PASS");
+    }
+
+    private static void CheckArea(List<string> results, string label, float actual, float expected)
+    {
+        if (Mathf.Abs(actual - expected) > .005f)
+            throw new Exception(label + ": expected area " + expected + ", got " + actual);
         results.Add(label + ": " + actual.ToString("P1") + " PASS");
     }
 }

@@ -175,6 +175,13 @@ public class TakePhoto : MonoBehaviour
     public float MeasureTrackingVisibility(Vector3 origin, Vector3 direction, Transform subject,
         float focalLengthMillimeters)
     {
+        return MeasureTrackingVisibility(origin, direction, subject, focalLengthMillimeters, out _);
+    }
+
+    public float MeasureTrackingVisibility(Vector3 origin, Vector3 direction, Transform subject,
+        float focalLengthMillimeters, out float frameCoverage)
+    {
+        frameCoverage = 0f;
         if (subject == null || direction.sqrMagnitude < 0.0001f) return 0f;
         EnsurePhotoCamera();
         ConfigurePhotoCameraFromMain(focalLengthMillimeters);
@@ -184,7 +191,9 @@ public class TakePhoto : MonoBehaviour
         HideHunterFromCapture();
         try
         {
-            return trackingVisibility.Measure(photoCamera, subject, 320, 180);
+            float visibility = trackingVisibility.Measure(photoCamera, subject, 320, 180);
+            frameCoverage = trackingVisibility.VisibleFrameCoverage;
+            return visibility;
         }
         finally
         {
@@ -458,13 +467,8 @@ public class TakePhoto : MonoBehaviour
             subjectVisibilityFraction > 0f &&
             subjectVisibilityFraction >=
             minimumVisibleSubjectFraction;
-        float subjectFrameCoverage =
-            CalculateSubjectFrameCoverage(
-                photoCamera.transform.position,
-                photoCamera.transform.rotation,
-                subject,
-                focalLengthMillimeters,
-                photoWidth / (float)photoHeight);
+        // Same shutter-midpoint pixel mask as occlusion; no renderer bounding boxes.
+        float subjectFrameCoverage = photoVisibility.VisibleFrameCoverage;
         float motionMtf50Retention = CalculateMtf50Retention(
             subjectImageTravelPixels,
             sharpMtf50);
@@ -834,85 +838,6 @@ public class TakePhoto : MonoBehaviour
             xMax - xMin,
             yMax - yMin);
         return true;
-    }
-
-    public static float CalculateSubjectFrameCoverage(
-        Vector3 cameraPosition,
-        Quaternion cameraRotation,
-        Transform subject,
-        float focalLengthMillimeters,
-        float outputAspect)
-    {
-        if (subject == null)
-        {
-            return 0f;
-        }
-
-        float sensorHeightMillimeters =
-            GetEffectiveSensorHeightMillimeters(outputAspect);
-        float focalLength = Mathf.Max(1f, focalLengthMillimeters);
-        Quaternion worldToCameraRotation =
-            Quaternion.Inverse(cameraRotation);
-        List<Vector2> projectedSensorPoints =
-            new List<Vector2>();
-        Renderer[] renderers =
-            subject.GetComponentsInChildren<Renderer>(true);
-        foreach (Renderer subjectRenderer in renderers)
-        {
-            if (subjectRenderer == null || !subjectRenderer.enabled)
-            {
-                continue;
-            }
-
-            Bounds bounds = subjectRenderer.bounds;
-            Vector3 minimum = bounds.min;
-            Vector3 maximum = bounds.max;
-            for (int corner = 0; corner < 8; corner++)
-            {
-                Vector3 worldPoint = new Vector3(
-                    (corner & 1) == 0 ? minimum.x : maximum.x,
-                    (corner & 2) == 0 ? minimum.y : maximum.y,
-                    (corner & 4) == 0 ? minimum.z : maximum.z);
-                Vector3 cameraPoint =
-                    worldToCameraRotation *
-                    (worldPoint - cameraPosition);
-                if (cameraPoint.z <= 0.01f)
-                {
-                    continue;
-                }
-
-                projectedSensorPoints.Add(new Vector2(
-                    Mathf.Clamp(
-                        focalLength * cameraPoint.x / cameraPoint.z,
-                        -FullFrameSensorWidthMillimeters * 0.5f,
-                        FullFrameSensorWidthMillimeters * 0.5f),
-                    Mathf.Clamp(
-                        focalLength * cameraPoint.y / cameraPoint.z,
-                        -sensorHeightMillimeters * 0.5f,
-                        sensorHeightMillimeters * 0.5f)));
-            }
-        }
-
-        float maximumProjectedLengthMillimeters = 0f;
-        for (int first = 0;
-            first < projectedSensorPoints.Count;
-            first++)
-        {
-            for (int second = first + 1;
-                second < projectedSensorPoints.Count;
-                second++)
-            {
-                maximumProjectedLengthMillimeters = Mathf.Max(
-                    maximumProjectedLengthMillimeters,
-                    Vector2.Distance(
-                        projectedSensorPoints[first],
-                        projectedSensorPoints[second]));
-            }
-        }
-
-        return Mathf.Clamp01(
-            maximumProjectedLengthMillimeters /
-            FullFrameSensorWidthMillimeters);
     }
 
     private static bool TryMeasureEdgeMtf50(
@@ -1758,7 +1683,7 @@ public class TakePhoto : MonoBehaviour
                 photoRect.width,
                 24f),
             $"{GetPhotoResultLabel(photoIndex)}    " +
-            $"Frame {photoSubjectFrameCoverages[photoIndex]:P0}    " +
+            $"Area {photoSubjectFrameCoverages[photoIndex]:P1}    " +
             $"Visible {photoSubjectVisibilityFractions[photoIndex]:P0} / " +
             $"Occluded {1f - photoSubjectVisibilityFractions[photoIndex]:P0}    " +
             $"Motion {photoBlurLengths[photoIndex]:F1}px    " +
@@ -1858,9 +1783,9 @@ public class TakePhoto : MonoBehaviour
             photoMinimumFrameCoverages[photoIndex])
         {
             return
-                $"FAILED  SUBJECT " +
-                $"{photoSubjectFrameCoverages[photoIndex]:P0} " +
-                $"<{photoMinimumFrameCoverages[photoIndex]:P0}  " +
+                $"FAILED  SUBJECT AREA " +
+                $"{photoSubjectFrameCoverages[photoIndex]:P1} " +
+                $"<{photoMinimumFrameCoverages[photoIndex]:P1}  " +
                 GetExposureLabel(photoIndex);
         }
 

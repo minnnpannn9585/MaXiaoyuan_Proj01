@@ -1,7 +1,7 @@
 using UnityEngine;
 using System.Collections.Generic;
 
-[RequireComponent(typeof(Rigidbody), typeof(Collider))]
+[RequireComponent(typeof(Rigidbody), typeof(Collider), typeof(HunterNavigation))]
 public class HunterMove : MonoBehaviour
 {
     private enum HunterState
@@ -20,17 +20,6 @@ public class HunterMove : MonoBehaviour
     [SerializeField] private float investigateSpeedMultiplier = 1.15f;
     [SerializeField] private float investigateArrivalDistance = 1.2f;
 
-    [Header("Obstacle Avoidance")]
-    [SerializeField] private LayerMask obstacleLayers = ~0;
-    [SerializeField] private float obstacleCheckDistance = 2.2f;
-    [SerializeField] private float obstacleCheckRadius = 0.38f;
-    [SerializeField] private float obstacleCheckHeight = 0.55f;
-    [SerializeField, Min(0.02f)] private float minimumObstacleClearance = 0.02f;
-    [SerializeField, Range(20f, 85f)] private float avoidanceAngle = 55f;
-    [SerializeField] private float avoidanceSideCommitTime = 0.8f;
-    [SerializeField] private float stuckCheckInterval = 0.8f;
-    [SerializeField] private float stuckMovementThreshold = 0.15f;
-
     [Header("Vision")]
     [SerializeField] private float visionDistance = 22f;
     [SerializeField, Range(10f, 180f)] private float fieldOfView = 100f;
@@ -44,6 +33,7 @@ public class HunterMove : MonoBehaviour
     {
         public float Time;
         public float Fraction;
+        public float FrameCoverage;
     }
 
     [Header("Aim and fire")]
@@ -60,6 +50,7 @@ public class HunterMove : MonoBehaviour
     [SerializeField] private float shotCooldown = 0.9f;
 
     [Header("Composition Approach")]
+    [Tooltip("Preferred visible subject pixel area divided by the full photo area (not projected length).")]
     [SerializeField, Range(0f, 1f)]
     private float preferredFrameCoverage = 0.2f;
     [SerializeField, Min(0f)]
@@ -112,7 +103,7 @@ public class HunterMove : MonoBehaviour
     [SerializeField, Range(0.05f, 0.5f)] private float sharpMtf50 = 0.35f;
     [Tooltip("Minimum MTF50 retention required for the player photo to count.")]
     [SerializeField, Range(0f, 1f)] private float minimumMtf50Retention = 0.8f;
-    [Tooltip("Minimum linear player projection required for a successful photo.")]
+    [Tooltip("Minimum visible subject pixel area divided by the full photo area required for a successful photo.")]
     [SerializeField, Range(0f, 1f)]
     private float minimumSuccessfulFrameCoverage = 0.2f;
     [Tooltip("Minimum visible fraction of the player's rendered in-frame silhouette. Includes visual occluders without colliders and alpha-cutout foliage.")]
@@ -128,7 +119,7 @@ public class HunterMove : MonoBehaviour
     [SerializeField, Min(0.3f)] private float maximumFocusDistance = 200f;
     [SerializeField, Min(0f)] private float autofocusReadyTolerance = 0.1f;
 
-    private Rigidbody body;
+    private HunterNavigation navigation;
     private Collider bodyCollider;
     private PlayerMove player;
     private HunterState state;
@@ -145,10 +136,6 @@ public class HunterMove : MonoBehaviour
     private float captureReadyTimer;
     private float currentTrackingErrorDegrees;
     private float lostSightTimer;
-    private float avoidanceSide = 1f;
-    private float avoidanceCommitUntil;
-    private float stuckCheckTimer;
-    private Vector3 lastProgressPosition;
     private bool aimLocked;
     private Transform warningTransform;
     private Mesh warningMesh;
@@ -191,7 +178,7 @@ public class HunterMove : MonoBehaviour
 
     private void Awake()
     {
-        body = GetComponent<Rigidbody>();
+        navigation = GetComponent<HunterNavigation>();
         bodyCollider = GetComponent<Collider>();
         hunterAnimator = GetComponentInChildren<Animator>();
         if (GetComponent<TakePhoto>() == null)
@@ -199,12 +186,7 @@ public class HunterMove : MonoBehaviour
             gameObject.AddComponent<TakePhoto>();
         }
 
-        body.useGravity = true;
-        body.interpolation = RigidbodyInterpolation.Interpolate;
-        body.collisionDetectionMode = CollisionDetectionMode.Continuous;
-        body.constraints = RigidbodyConstraints.FreezeRotation;
-        body.drag = 2f;
-        lastProgressPosition = transform.position;
+        if (hunterAnimator != null) hunterAnimator.applyRootMotion = false;
         currentFocusDistance = Mathf.Clamp(
             initialFocusDistance,
             minimumFocusDistance,
@@ -268,6 +250,7 @@ public class HunterMove : MonoBehaviour
             return;
         }
 
+        if (!navigation.EnsureReady()) return;
         bool wantsToMove = WantsToMove();
         if (wantsToMove && !IsMovementPoseReady())
         {
@@ -338,7 +321,7 @@ public class HunterMove : MonoBehaviour
 
         Vector3 flatOffset = patrolTarget - transform.position;
         flatOffset.y = 0f;
-        if (flatOffset.sqrMagnitude <= waypointTolerance * waypointTolerance)
+        if (navigation.AtPathEnd || flatOffset.sqrMagnitude <= waypointTolerance * waypointTolerance)
         {
             ChoosePatrolTarget();
         }
@@ -358,7 +341,7 @@ public class HunterMove : MonoBehaviour
 
         Vector3 offset = lastKnownPlayerPosition - transform.position;
         offset.y = 0f;
-        if (offset.sqrMagnitude <= investigateArrivalDistance * investigateArrivalDistance)
+        if (navigation.AtPathEnd || offset.sqrMagnitude <= investigateArrivalDistance * investigateArrivalDistance)
         {
             EnterSearch();
         }
@@ -661,7 +644,7 @@ public class HunterMove : MonoBehaviour
                 Quaternion.LookRotation(
                     direction.normalized,
                     Vector3.up),
-                body.velocity,
+                navigation.Velocity,
                 photoCameraAngularVelocity,
                 player.transform.position,
                 playerVelocity,
@@ -814,7 +797,7 @@ public class HunterMove : MonoBehaviour
                 photoFocalLength,
                 sensorPixelPitchMicrometers,
                 motionBlurScale,
-                body.velocity,
+                navigation.Velocity,
                 photoCameraAngularVelocity,
                 aperture,
                 iso,
@@ -913,16 +896,13 @@ public class HunterMove : MonoBehaviour
             return false;
         }
 
-        float frameCoverage =
-            TakePhoto.CalculateSubjectFrameCoverage(
-                eyePosition,
-                Quaternion.LookRotation(
-                    direction.normalized,
-                    Vector3.up),
-                candidate.transform,
-                photoFocalLength,
-                16f / 9f);
-        return frameCoverage < preferredFrameCoverage;
+        Vector3 groundOffset = candidate.transform.position - transform.position;
+        groundOffset.y = 0f;
+        if (groundOffset.sqrMagnitude <= investigateArrivalDistance * investigateArrivalDistance ||
+            navigation.CannotGetCloserTo(candidate.transform.position)) return false;
+        GetRenderedVisibility(candidate, direction, false);
+        return !visibilitySamples.TryGetValue(candidate.GetInstanceID(), out VisibilitySample sample) ||
+            sample.FrameCoverage < preferredFrameCoverage;
     }
 
     private bool HasLineOfSight(PlayerMove candidate, float maxDistance)
@@ -953,9 +933,10 @@ public class HunterMove : MonoBehaviour
             Time.time - sample.Time < visibilityCheckInterval)
             return sample.Fraction;
         TakePhoto photography = GetComponent<TakePhoto>();
+        float frameCoverage = 0f;
         float fraction = photography == null ? 0f : photography.MeasureTrackingVisibility(
-            GetEyePosition(), direction, candidate.transform, photoFocalLength);
-        visibilitySamples[id] = new VisibilitySample { Time = Time.time, Fraction = fraction };
+            GetEyePosition(), direction, candidate.transform, photoFocalLength, out frameCoverage);
+        visibilitySamples[id] = new VisibilitySample { Time = Time.time, Fraction = fraction, FrameCoverage = frameCoverage };
         return fraction;
     }
     private bool TryAcquireVisiblePlayer()
@@ -1000,235 +981,25 @@ public class HunterMove : MonoBehaviour
 
     private void MoveTowardsPosition(Vector3 targetPosition, float speed)
     {
-        Vector3 direction = targetPosition - transform.position;
+        navigation.MoveTo(targetPosition, speed,
+            state == HunterState.Search ? waypointTolerance : investigateArrivalDistance);
+        Vector3 direction = navigation.Velocity;
         direction.y = 0f;
-        if (direction.sqrMagnitude < 0.01f)
-        {
-            StopHorizontalMovement();
-            return;
-        }
-
-        direction.Normalize();
-        direction = CalculateAvoidanceDirection(direction, out bool isSeparatingFromObstacle);
-        float safeSpeed = isSeparatingFromObstacle
-            ? speed
-            : CalculateSafeMovementSpeed(direction, speed);
-        Vector3 velocity = direction * safeSpeed;
-        body.velocity = new Vector3(velocity.x, body.velocity.y, velocity.z);
-        UpdateStuckDetection();
-
-        Quaternion desiredRotation = Quaternion.LookRotation(direction, Vector3.up);
-        body.MoveRotation(Quaternion.Slerp(
-            body.rotation,
-            desiredRotation,
-            patrolTurnSpeed * Time.fixedDeltaTime));
+        if (direction.sqrMagnitude > .001f) RotateTowardsPosition(transform.position + direction);
     }
 
     private void RotateTowardsPosition(Vector3 targetPosition)
     {
         Vector3 direction = targetPosition - transform.position;
         direction.y = 0f;
-        if (direction.sqrMagnitude < 0.01f)
-        {
-            return;
-        }
-
-        Quaternion desiredRotation = Quaternion.LookRotation(direction.normalized, Vector3.up);
-        body.MoveRotation(Quaternion.Slerp(
-            body.rotation,
-            desiredRotation,
-            patrolTurnSpeed * Time.fixedDeltaTime));
+        if (direction.sqrMagnitude < .01f) return;
+        transform.rotation = Quaternion.Slerp(transform.rotation,
+            Quaternion.LookRotation(direction.normalized, Vector3.up), patrolTurnSpeed * Time.fixedDeltaTime);
     }
 
-    private void StopHorizontalMovement()
-    {
-        body.velocity = new Vector3(0f, body.velocity.y, 0f);
-    }
+    private void StopHorizontalMovement() { navigation.Stop(); }
 
-    private Vector3 CalculateAvoidanceDirection(
-        Vector3 desiredDirection,
-        out bool isSeparatingFromObstacle)
-    {
-        isSeparatingFromObstacle = false;
-        if (TryGetSeparationDirection(out Vector3 separationDirection))
-        {
-            isSeparatingFromObstacle = true;
-            return separationDirection;
-        }
-
-        float forwardClearance = GetObstacleClearance(desiredDirection);
-        if (forwardClearance >= obstacleCheckDistance)
-        {
-            return desiredDirection;
-        }
-
-        Vector3 leftDirection = Quaternion.AngleAxis(-avoidanceAngle, Vector3.up) * desiredDirection;
-        Vector3 rightDirection = Quaternion.AngleAxis(avoidanceAngle, Vector3.up) * desiredDirection;
-        float leftClearance = GetObstacleClearance(leftDirection);
-        float rightClearance = GetObstacleClearance(rightDirection);
-
-        if (Time.time >= avoidanceCommitUntil)
-        {
-            avoidanceSide = rightClearance > leftClearance ? 1f : -1f;
-            avoidanceCommitUntil = Time.time + avoidanceSideCommitTime;
-        }
-        else if (avoidanceSide > 0f && rightClearance < 0.1f && leftClearance > rightClearance)
-        {
-            avoidanceSide = -1f;
-            avoidanceCommitUntil = Time.time + avoidanceSideCommitTime;
-        }
-        else if (avoidanceSide < 0f && leftClearance < 0.1f && rightClearance > leftClearance)
-        {
-            avoidanceSide = 1f;
-            avoidanceCommitUntil = Time.time + avoidanceSideCommitTime;
-        }
-
-        float blockedRatio = 1f - Mathf.Clamp01(forwardClearance / obstacleCheckDistance);
-        float steerAngle = avoidanceAngle * Mathf.Lerp(0.45f, 1f, blockedRatio) * avoidanceSide;
-        Vector3 steering = (Quaternion.AngleAxis(steerAngle, Vector3.up) * desiredDirection).normalized;
-        if (GetObstacleClearance(steering) >= Mathf.Min(0.4f, obstacleCheckDistance))
-            return steering;
-
-        // Both forward diagonals can point into a broad tree/rock. Permit a lateral
-        // detour or retreat rather than repeatedly alternating two blocked headings.
-        Vector3 bestDirection = steering;
-        float bestScore = GetObstacleClearance(steering);
-        for (int side = 0; side < 2; side++)
-        {
-            float sign = side == 0 ? avoidanceSide : -avoidanceSide;
-            for (int angle = 90; angle <= 180; angle += 45)
-            {
-                Vector3 candidate = Quaternion.AngleAxis(angle * sign, Vector3.up) * desiredDirection;
-                float clearance = GetObstacleClearance(candidate);
-                float score = clearance + Vector3.Dot(candidate, desiredDirection) * 0.15f;
-                if (side == 0) score += 0.05f;
-                if (score <= bestScore) continue;
-                bestScore = score;
-                bestDirection = candidate;
-            }
-        }
-        return bestDirection.normalized;
-    }
-
-    private float CalculateSafeMovementSpeed(Vector3 direction, float requestedSpeed)
-    {
-        float clearance = GetObstacleClearance(direction);
-        float plannedDistance = requestedSpeed * Time.fixedDeltaTime;
-        if (clearance >= plannedDistance)
-        {
-            return requestedSpeed;
-        }
-
-        return Mathf.Max(0f, clearance - 0.001f) / Time.fixedDeltaTime;
-    }
-
-    private float GetObstacleClearance(Vector3 direction)
-    {
-        GetAvoidanceCapsule(out Vector3 bottom, out Vector3 top, out float radius);
-        RaycastHit[] hits = Physics.CapsuleCastAll(
-            bottom,
-            top,
-            radius,
-            direction,
-            obstacleCheckDistance,
-            obstacleLayers,
-            QueryTriggerInteraction.Ignore);
-
-        float clearance = obstacleCheckDistance;
-        foreach (RaycastHit hit in hits)
-        {
-            if (ShouldIgnoreObstacle(hit.collider) || hit.normal.y >= 0.65f)
-            {
-                continue;
-            }
-
-            clearance = Mathf.Min(clearance, hit.distance);
-        }
-
-        return clearance;
-    }
-
-    private bool TryGetSeparationDirection(out Vector3 separationDirection)
-    {
-        GetAvoidanceCapsule(out Vector3 bottom, out Vector3 top, out float radius);
-        Collider[] overlaps = Physics.OverlapCapsule(
-            bottom,
-            top,
-            radius,
-            obstacleLayers,
-            QueryTriggerInteraction.Ignore);
-
-        Vector3 separation = Vector3.zero;
-        foreach (Collider obstacle in overlaps)
-        {
-            if (ShouldIgnoreObstacle(obstacle))
-            {
-                continue;
-            }
-
-            // Resolve real body penetration, not a guessed vector from a high probe.
-            if (!Physics.ComputePenetration(bodyCollider, transform.position, transform.rotation,
-                obstacle, obstacle.transform.position, obstacle.transform.rotation,
-                out Vector3 away, out float penetration) || away.y >= 0.65f)
-            {
-                continue;
-            }
-            away.y = 0f;
-            if (away.sqrMagnitude > 0.0001f) separation += away.normalized * penetration;
-        }
-
-        separationDirection = separation.sqrMagnitude > 0.0001f
-            ? separation.normalized
-            : Vector3.zero;
-        return separationDirection != Vector3.zero;
-    }
-
-    private float GetRequiredAvoidanceRadius()
-    {
-        Bounds bounds = bodyCollider.bounds;
-        float bodyRadius = Mathf.Max(bounds.extents.x, bounds.extents.z);
-        return Mathf.Max(obstacleCheckRadius, bodyRadius + minimumObstacleClearance);
-    }
-
-    private void GetAvoidanceCapsule(out Vector3 bottom, out Vector3 top, out float radius)
-    {
-        Bounds bounds = bodyCollider.bounds;
-        radius = GetRequiredAvoidanceRadius();
-        // A small foot clearance avoids treating the supporting ground as a wall.
-        float bottomY = bounds.min.y + radius + 0.06f;
-        float topY = Mathf.Max(bottomY, bounds.max.y - radius);
-        bottom = new Vector3(bounds.center.x, bottomY, bounds.center.z);
-        top = new Vector3(bounds.center.x, topY, bounds.center.z);
-    }
-
-    private bool ShouldIgnoreObstacle(Collider obstacle)
-    {
-        return obstacle == null ||
-               obstacle == bodyCollider ||
-               obstacle.transform == transform ||
-               obstacle.transform.IsChildOf(transform) ||
-               obstacle.GetComponentInParent<PlayerMove>() != null;
-    }
-
-    private void UpdateStuckDetection()
-    {
-        stuckCheckTimer += Time.fixedDeltaTime;
-        if (stuckCheckTimer < stuckCheckInterval)
-        {
-            return;
-        }
-
-        Vector3 movement = transform.position - lastProgressPosition;
-        movement.y = 0f;
-        if (movement.magnitude < stuckMovementThreshold)
-        {
-            avoidanceSide *= -1f;
-            avoidanceCommitUntil = Time.time + avoidanceSideCommitTime;
-        }
-
-        lastProgressPosition = transform.position;
-        stuckCheckTimer = 0f;
-    }
+    private void OnDisable() { if (navigation != null) navigation.Stop(); }
 
     private void ConfigurePatrolBounds()
     {
@@ -1247,12 +1018,22 @@ public class HunterMove : MonoBehaviour
         }
     }
 
+    private float nextPatrolSelection;
     private void ChoosePatrolTarget()
     {
-        patrolTarget = new Vector3(
-            Random.Range(patrolBounds.min.x, patrolBounds.max.x),
-            transform.position.y,
-            Random.Range(patrolBounds.min.z, patrolBounds.max.z));
+        if (Time.time < nextPatrolSelection) return;
+        nextPatrolSelection = Time.time + 1f;
+        for (int attempt = 0; attempt < 12; attempt++)
+        {
+            Vector3 candidate = new Vector3(Random.Range(patrolBounds.min.x, patrolBounds.max.x),
+                patrolBounds.center.y + 512f, Random.Range(patrolBounds.min.z, patrolBounds.max.z));
+            if (navigation.TryPatrolPoint(candidate, out Vector3 reachable))
+            {
+                patrolTarget = reachable;
+                return;
+            }
+        }
+        patrolTarget = transform.position;
     }
 
     private Vector3 GetEyePosition()
@@ -1293,7 +1074,7 @@ public class HunterMove : MonoBehaviour
             return;
         }
 
-        Vector3 horizontalVelocity = body.velocity;
+        Vector3 horizontalVelocity = navigation.Velocity;
         horizontalVelocity.y = 0f;
         float normalizedSpeed = patrolSpeed > 0.01f
             ? Mathf.Clamp(horizontalVelocity.magnitude / patrolSpeed, 0f, 1.5f)
@@ -1314,7 +1095,9 @@ public class HunterMove : MonoBehaviour
 
         if (state == HunterState.Search)
         {
-            return true;
+            Vector3 patrolOffset = patrolTarget - transform.position;
+            patrolOffset.y = 0f;
+            return patrolOffset.sqrMagnitude > waypointTolerance * waypointTolerance;
         }
 
         if (state != HunterState.Investigate)

@@ -15,6 +15,7 @@ public sealed class PhotoVisibility : IDisposable
     private RenderTexture target;
     private Texture2D readback;
     public float SubjectPixelCount { get; private set; }
+    public float VisibleFrameCoverage { get; private set; }
 
     private sealed class SubjectState
     {
@@ -28,6 +29,7 @@ public sealed class PhotoVisibility : IDisposable
     public float Measure(Camera camera, Transform subject, int width, int height)
     {
         SubjectPixelCount = 0f;
+        VisibleFrameCoverage = 0f;
         if (subject == null) return 0f;
         Shader shader = Resources.Load<Shader>("PhotoSubjectMask");
         if (shader == null || !shader.isSupported)
@@ -112,6 +114,7 @@ public sealed class PhotoVisibility : IDisposable
                 visible += Mathf.Min(full, Difference(visibleWhite[i], visibleBlack[i]));
             }
             SubjectPixelCount = (float)total;
+            VisibleFrameCoverage = Mathf.Clamp01((float)(visible / referenceWhite.Length));
             return total < 1.0 ? 0f : Mathf.Clamp01((float)(visible / total));
         }
         finally

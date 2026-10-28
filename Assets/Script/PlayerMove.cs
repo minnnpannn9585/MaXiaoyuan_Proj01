@@ -19,6 +19,18 @@ public class PlayerMove : MonoBehaviour
     [SerializeField] private float turnSpeed = 12f;
     [SerializeField] private float doubleTapWindow = 0.3f;
 
+    [Header("Flight Steering")]
+    [SerializeField, Min(1f)] private float flightTurnRate = 75f;
+    [SerializeField, Min(1f)] private float flightTurnAcceleration = 150f;
+    [SerializeField, Min(.05f)] private float flightTurnResponse = .5f;
+    [SerializeField, Min(.1f)] private float flightVerticalAcceleration = 6f;
+    [SerializeField, Range(.1f, 1f)] private float takeoffForwardSpeedRatio = .45f;
+    [SerializeField, Min(0f)] private float takeoffLiftDuration = .35f;
+    private float flightYawRate;
+    private float takeoffLiftRemaining;
+    private bool climbInput;
+    private bool descendInput;
+
     [Header("Stamina")]
     [SerializeField] private float maxStamina = 100f;
     [SerializeField] private float flightDrainPerSecond = 24f;
@@ -49,6 +61,8 @@ public class PlayerMove : MonoBehaviour
     public bool IsGrounded => isGrounded;
     public bool IsFlying => isFlying;
     public bool IsStunned => Time.time < stunUntil;
+    public Vector3 Velocity => body == null ? Vector3.zero : body.velocity;
+    public int TakeoffSequence { get; private set; }
 
     private void Awake()
     {
@@ -105,11 +119,14 @@ public class PlayerMove : MonoBehaviour
         if (!CanAcceptInput())
         {
             moveInput = Vector2.zero;
+            climbInput = descendInput = false;
             return;
         }
 
         moveInput = new Vector2(Input.GetAxisRaw("Horizontal"), Input.GetAxisRaw("Vertical"));
         moveInput = Vector2.ClampMagnitude(moveInput, 1f);
+        climbInput = Input.GetKey(KeyCode.Space);
+        descendInput = Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift);
         HandleFlightToggleInput();
     }
 
@@ -135,9 +152,59 @@ public class PlayerMove : MonoBehaviour
             }
         }
 
+        if (!isFlying && isGrounded)
+        {
+            currentStamina = Mathf.Min(maxStamina, currentStamina + groundedRecoveryPerSecond * Time.fixedDeltaTime);
+            if (flightLocked && currentStamina >= flightRestartStamina) flightLocked = false;
+        }
+
+        if (!gameRunning || IsStunned)
+        {
+            SlowHorizontalMovement();
+            return;
+        }
         if (isFlying)
         {
-            currentStamina = Mathf.Max(0f, currentStamina - flightDrainPerSecond * Time.fixedDeltaTime);
+            UpdateFlightMovement(Time.fixedDeltaTime);
+            return;
+        }
+        if (TakePhoto.IsBackpackOpen)
+        {
+            SlowHorizontalMovement();
+            return;
+        }
+
+        Vector3 moveDirection = GetCameraRelativeDirection();
+        float targetSpeed = isGrounded ? walkSpeed : airControl;
+        Vector3 currentHorizontal = new Vector3(body.velocity.x, 0f, body.velocity.z);
+        Vector3 nextHorizontal = Vector3.MoveTowards(currentHorizontal, moveDirection * targetSpeed,
+            acceleration * Time.fixedDeltaTime);
+        body.velocity = new Vector3(nextHorizontal.x, body.velocity.y, nextHorizontal.z);
+        if (moveDirection.sqrMagnitude > .01f)
+        {
+            body.MoveRotation(Quaternion.Slerp(body.rotation,
+                Quaternion.LookRotation(moveDirection, Vector3.up), turnSpeed * Time.fixedDeltaTime));
+        }
+    }
+
+    private void UpdateFlightMovement(float dt)
+    {
+        Vector3 desired = GetCameraRelativeDirection();
+        Quaternion rotation = StepFlightHeading(body.rotation, desired, ref flightYawRate,
+            flightTurnRate, flightTurnAcceleration, flightTurnResponse, dt);
+        Vector3 forward = rotation * Vector3.forward;
+        float horizontalSpeed = new Vector2(body.velocity.x, body.velocity.z).magnitude;
+        horizontalSpeed = Mathf.MoveTowards(horizontalSpeed, flightSpeed, acceleration * dt);
+        // No input maintains forward flight. S asks for a gradual U-turn, never reverse thrust.
+        float targetVertical = climbInput || takeoffLiftRemaining > 0f ? flightRiseSpeed :
+            descendInput ? -flightDescendSpeed : 0f;
+        takeoffLiftRemaining = Mathf.Max(0f, takeoffLiftRemaining - dt);
+        float vertical = Mathf.MoveTowards(body.velocity.y, targetVertical, flightVerticalAcceleration * dt);
+        body.velocity = forward * horizontalSpeed + Vector3.up * vertical;
+        body.MoveRotation(rotation);
+        if (vertical > .05f)
+        {
+            currentStamina = Mathf.Max(0f, currentStamina - flightDrainPerSecond * dt);
             if (currentStamina <= 0f)
             {
                 flightLocked = true;
@@ -145,57 +212,20 @@ public class PlayerMove : MonoBehaviour
                 ExitFlightMode();
             }
         }
-        else if (isGrounded)
-        {
-            currentStamina = Mathf.Min(maxStamina, currentStamina + groundedRecoveryPerSecond * Time.fixedDeltaTime);
-            if (flightLocked && currentStamina >= flightRestartStamina)
-            {
-                flightLocked = false;
-            }
-        }
+    }
 
-        if (!gameRunning || IsStunned || TakePhoto.IsBackpackOpen)
-        {
-            SlowHorizontalMovement();
-            return;
-        }
-
-        Vector3 moveDirection = GetCameraRelativeDirection();
-        float targetSpeed = isFlying ? flightSpeed : (isGrounded ? walkSpeed : airControl);
-        Vector3 targetHorizontal = moveDirection * targetSpeed;
-        Vector3 currentHorizontal = new Vector3(body.velocity.x, 0f, body.velocity.z);
-        Vector3 nextHorizontal = Vector3.MoveTowards(
-            currentHorizontal,
-            targetHorizontal,
-            acceleration * Time.fixedDeltaTime);
-
-        float verticalVelocity = body.velocity.y;
-        if (isFlying)
-        {
-            if (Input.GetKey(KeyCode.Space))
-            {
-                verticalVelocity = flightRiseSpeed;
-            }
-            else if (Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift))
-            {
-                verticalVelocity = -flightDescendSpeed;
-            }
-            else
-            {
-                verticalVelocity = 0f;
-            }
-        }
-
-        body.velocity = new Vector3(nextHorizontal.x, verticalVelocity, nextHorizontal.z);
-
-        if (moveDirection.sqrMagnitude > 0.01f)
-        {
-            Quaternion targetRotation = Quaternion.LookRotation(moveDirection, Vector3.up);
-            body.MoveRotation(Quaternion.Slerp(
-                body.rotation,
-                targetRotation,
-                turnSpeed * Time.fixedDeltaTime));
-        }
+    public static Quaternion StepFlightHeading(Quaternion rotation, Vector3 desired, ref float yawRate,
+        float maxRate, float angularAcceleration, float responseTime, float dt)
+    {
+        Vector3 forward = rotation * Vector3.forward;
+        forward.y = desired.y = 0f;
+        float error = desired.sqrMagnitude > .01f ? Vector3.SignedAngle(forward, desired, Vector3.up) : 0f;
+        float targetRate = Mathf.Clamp(error / Mathf.Max(.05f, responseTime), -maxRate, maxRate);
+        yawRate = Mathf.MoveTowards(yawRate, targetRate, angularAcceleration * dt);
+        float step = yawRate * dt;
+        if (desired.sqrMagnitude > .01f && Mathf.Sign(step) == Mathf.Sign(error) && Mathf.Abs(step) > Mathf.Abs(error))
+        { step = error; yawRate = 0f; }
+        return Quaternion.AngleAxis(step, Vector3.up) * rotation;
     }
 
     private bool CanAcceptInput()
@@ -235,9 +265,17 @@ public class PlayerMove : MonoBehaviour
     private void EnterFlightMode()
     {
         isFlying = true;
+        body.useGravity = false;
+        flightYawRate = 0f;
+        takeoffLiftRemaining = isGrounded ? takeoffLiftDuration : 0f;
+        Vector3 forward = Vector3.ProjectOnPlane(transform.forward, Vector3.up).normalized;
+        float launchSpeed = Mathf.Max(new Vector2(body.velocity.x, body.velocity.z).magnitude,
+            flightSpeed * takeoffForwardSpeedRatio);
+        body.velocity = forward * launchSpeed + Vector3.up * body.velocity.y;
         hasLeftTakeoffSurface = !isGrounded;
         if (isGrounded)
         {
+            TakeoffSequence++;
             body.velocity = new Vector3(body.velocity.x, flightRiseSpeed, body.velocity.z);
         }
     }
@@ -245,6 +283,8 @@ public class PlayerMove : MonoBehaviour
     private void ExitFlightMode()
     {
         isFlying = false;
+        body.useGravity = true;
+        takeoffLiftRemaining = 0f;
         hasLeftTakeoffSurface = false;
         lastSpacePressTime = float.NegativeInfinity;
     }
