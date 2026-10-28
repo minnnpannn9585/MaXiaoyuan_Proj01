@@ -47,12 +47,15 @@ public static class PhotoVisibilityChecks
             blocker.SetActive(false);
             Check(results, "unobstructed", measure.Measure(camera, subject.transform, 256, 256), 1f);
             CheckArea(results, "2x2 subject in 4x4 frame", measure.VisibleFrameCoverage, .25f);
+            CheckArea(results, "silhouette bounds cover quarter frame", measure.SubjectFrameCoverage, .25f);
             blocker.SetActive(true);
             Check(results, "full coverage without Collider", measure.Measure(camera, subject.transform, 256, 256), 0f);
             CheckArea(results, "fully hidden area", measure.VisibleFrameCoverage, 0f);
+            CheckArea(results, "occlusion does not shrink composition", measure.SubjectFrameCoverage, .25f);
             blocker.transform.position = new Vector3(1, 0, 5);
             Check(results, "half coverage without Collider", measure.Measure(camera, subject.transform, 256, 256), 0.5f);
             CheckArea(results, "half-hidden area", measure.VisibleFrameCoverage, .125f);
+            CheckArea(results, "half-hidden composition still quarter frame", measure.SubjectFrameCoverage, .25f);
             blocker.transform.position = new Vector3(0, 0, 15);
             Check(results, "blocker behind subject", measure.Measure(camera, subject.transform, 256, 256), 1f);
 
@@ -76,12 +79,20 @@ public static class PhotoVisibilityChecks
             subjectMaterial.EnableKeyword("_ALPHATEST_ON");
             Check(results, "cutout subject visibility", measure.Measure(camera, subject.transform, 256, 256), 1f);
             CheckArea(results, "subject transparent pixels excluded", measure.VisibleFrameCoverage, .125f);
+            CheckArea(results, "bounds follow clipped silhouette, not quad mesh", measure.SubjectFrameCoverage, .125f);
+            for (int y = 0; y < 16; y++)
+                for (int x = 0; x < 16; x++) pixels[y * 16 + x] = new Color(0, 1, 0, Mathf.Abs(x - y) <= 1 ? 1 : 0);
+            cutout.SetPixels(pixels);cutout.Apply();
+            measure.Measure(camera, subject.transform, 256, 256);
+            CheckArea(results, "thin diagonal composition spans full footprint", measure.SubjectFrameCoverage, .25f);
+            if (measure.VisibleFrameCoverage >= .1f) throw new Exception("Thin silhouette should occupy much less area than its composition bounds.");
             subjectMaterial.DisableKeyword("_ALPHATEST_ON");
             subjectMaterial.SetFloat("_AlphaClip", 0);
             subjectMaterial.SetTexture("_BaseMap", Texture2D.whiteTexture);
             subject.transform.position = new Vector3(2, 0, 10);
             measure.Measure(camera, subject.transform, 256, 256);
             CheckArea(results, "half outside frame", measure.VisibleFrameCoverage, .125f);
+            CheckArea(results, "composition excludes outside-frame pixels", measure.SubjectFrameCoverage, .125f);
             subject.transform.position = new Vector3(0, 0, 10);
             blocker.SetActive(true);
 
@@ -100,11 +111,13 @@ public static class PhotoVisibilityChecks
             subject.transform.position = new Vector3(10, 0, 10);
             Check(results, "outside frame", measure.Measure(camera, subject.transform, 256, 256), 0f);
             CheckArea(results, "outside frame area", measure.VisibleFrameCoverage, 0f);
+            CheckArea(results, "outside-frame composition", measure.SubjectFrameCoverage, 0f);
             subject.transform.position = new Vector3(0, 0, -10);
             Check(results, "behind camera", measure.Measure(camera, subject.transform, 256, 256), 0f);
             CheckArea(results, "behind camera area", measure.VisibleFrameCoverage, 0f);
             measure.Measure(camera, null, 256, 256);
             CheckArea(results, "no stale area for missing subject", measure.VisibleFrameCoverage, 0f);
+            CheckArea(results, "no stale composition for missing subject", measure.SubjectFrameCoverage, 0f);
             var restored = new MaterialPropertyBlock();
             subject.GetComponent<Renderer>().GetPropertyBlock(restored);
             if (subject.GetComponent<Renderer>().sharedMaterial != subjectMaterial || restored.GetColor("_BaseColor") != Color.red)

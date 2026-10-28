@@ -46,13 +46,16 @@ public class HunterMove : MonoBehaviour
     [SerializeField, Range(0f, 1f)] private float verticalTrackingErrorRatio = 0.45f;
     [SerializeField, Min(0f)] private float captureAimErrorDegrees = 2.2f;
     [SerializeField, Min(0f)] private float maximumPreferredSubjectBlurPixels = 12f;
+    [Tooltip("Maximum wait for a low-motion-blur opportunity after crouching. After this, take the shot if visibility, focus and aim are ready; photo quality is still scored normally.")]
+    [SerializeField, Min(0f)] private float maximumBlurWaitSeconds = 1.5f;
     [SerializeField] private float lockedWarningDuration = 0.2f;
     [SerializeField] private float shotCooldown = 0.9f;
 
     [Header("Composition Approach")]
-    [Tooltip("Preferred visible subject pixel area divided by the full photo area (not projected length).")]
+    [Tooltip("Preferred 2D silhouette bounding-box area divided by photo area. Occlusion is checked separately.")]
     [SerializeField, Range(0f, 1f)]
-    private float preferredFrameCoverage = 0.2f;
+    private float preferredFrameCoverage = 0.15f;
+    [Tooltip("Only approach for a larger composition while the target is effectively stationary, regardless of flight or ground state.")]
     [SerializeField, Min(0f)]
     private float stationaryApproachSpeedThreshold = 0.25f;
 
@@ -103,9 +106,9 @@ public class HunterMove : MonoBehaviour
     [SerializeField, Range(0.05f, 0.5f)] private float sharpMtf50 = 0.35f;
     [Tooltip("Minimum MTF50 retention required for the player photo to count.")]
     [SerializeField, Range(0f, 1f)] private float minimumMtf50Retention = 0.8f;
-    [Tooltip("Minimum visible subject pixel area divided by the full photo area required for a successful photo.")]
+    [Tooltip("Minimum 2D silhouette bounding-box area divided by photo area required for a successful photo. Occlusion is checked separately.")]
     [SerializeField, Range(0f, 1f)]
-    private float minimumSuccessfulFrameCoverage = 0.2f;
+    private float minimumSuccessfulFrameCoverage = 0.15f;
     [Tooltip("Minimum visible fraction of the player's rendered in-frame silhouette. Includes visual occluders without colliders and alpha-cutout foliage.")]
     [SerializeField, Range(0f, 1f)]
     private float minimumVisibleSubjectFraction = 0.8f;
@@ -417,8 +420,8 @@ public class HunterMove : MonoBehaviour
             canSeePlayer &&
             IsAutoFocusReady(focusPoint) &&
             currentTrackingErrorDegrees <= captureAimErrorDegrees &&
-            predictedSubjectBlurPixels <=
-                maximumPreferredSubjectBlurPixels;
+            (predictedSubjectBlurPixels <= maximumPreferredSubjectBlurPixels ||
+                stateTimer >= maximumBlurWaitSeconds);
         if (readyToCapture)
         {
             aimLocked = true;
@@ -879,9 +882,7 @@ public class HunterMove : MonoBehaviour
     private bool ShouldApproachForComposition(PlayerMove candidate)
     {
         if (candidate == null ||
-            (candidate.IsFlying &&
-                candidate.CurrentSpeed >
-                stationaryApproachSpeedThreshold))
+            candidate.CurrentSpeed > stationaryApproachSpeedThreshold)
         {
             return false;
         }
@@ -902,7 +903,7 @@ public class HunterMove : MonoBehaviour
             navigation.CannotGetCloserTo(candidate.transform.position)) return false;
         GetRenderedVisibility(candidate, direction, false);
         return !visibilitySamples.TryGetValue(candidate.GetInstanceID(), out VisibilitySample sample) ||
-            sample.FrameCoverage < preferredFrameCoverage;
+            sample.FrameCoverage < Mathf.Min(preferredFrameCoverage, minimumSuccessfulFrameCoverage);
     }
 
     private bool HasLineOfSight(PlayerMove candidate, float maxDistance)

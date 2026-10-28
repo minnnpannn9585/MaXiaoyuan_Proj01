@@ -36,7 +36,7 @@ public static class SeagullAnimatorGraph
         // Hold the pose with a running state clock so artists can also use exit times.
         if (standingState.speed == 0f) { standingState.motion = pose;standingState.speed = 1f;EditorUtility.SetDirty(standingState); }
         // Do not overwrite transition timings edited by the artist on later installs.
-        if (controller.parameters.Any(p => p.name == "IsFlying")) return;
+        if (controller.parameters.Any(p => p.name == "IsFlying")) { EnsureCrashRecovery(controller); EnsureJump(controller); return; }
         foreach (string name in new[] { "IsGrounded", "IsFlying", "IsMoving", "IsAscending", "IdleReady" })
             controller.AddParameter(name, AnimatorControllerParameterType.Bool);
         controller.AddParameter("TakeOff", AnimatorControllerParameterType.Trigger);
@@ -72,6 +72,98 @@ public static class SeagullAnimatorGraph
             Add(states[source].AddTransition(states["Walk"]), false, "!IsFlying", "IsGrounded", "IsMoving");
         }
         EditorUtility.SetDirty(controller);
+        EnsureCrashRecovery(controller);
+        EnsureJump(controller);
+    }
+
+    private static void EnsureJump(AnimatorController controller)
+    {
+        if (controller.parameters.Any(p => p.name == "IsJumping")) return;
+        const string path = "Assets/Animation/PlayerSeagull/Jump.anim";
+        var clip = AssetDatabase.LoadAssetAtPath<AnimationClip>(path);
+        if (clip == null)
+        {
+            var source = AssetDatabase.LoadAllAssetsAtPath("Assets/ANIMALS FULL PACK/Birds Pack/Seagull/FBX Files/Seagull@Hop.FBX")
+                .OfType<AnimationClip>().First(c => !c.name.StartsWith("__preview"));
+            clip = Object.Instantiate(source);
+            clip.name = "Jump";
+            var settings = AnimationUtility.GetAnimationClipSettings(clip);
+            settings.loopTime = false;
+            AnimationUtility.SetAnimationClipSettings(clip, settings);
+            AnimationUtility.SetAnimationEvents(clip, new AnimationEvent[0]);
+            AssetDatabase.CreateAsset(clip, path);
+        }
+        controller.AddParameter("IsJumping", AnimatorControllerParameterType.Bool);
+        var machine = controller.layers[0].stateMachine;
+        foreach (var transition in machine.anyStateTransitions.Where(t => t.destinationState != null && t.destinationState.name == "Falling"))
+        {
+            transition.AddCondition(AnimatorConditionMode.IfNot, 0f, "IsJumping");
+            EditorUtility.SetDirty(transition);
+        }
+        var jump = machine.AddState("Jump", new Vector3(250, 500));
+        jump.motion = clip;
+        Add(machine.AddAnyStateTransition(jump), false, "IsJumping", "!IsFlying", "!CrashRecovery");
+        foreach (string target in new[] { "Standing", "Walk" })
+            Add(jump.AddTransition(machine.states.First(s => s.state.name == target).state), false,
+                "!IsJumping", "IsGrounded", "!IsFlying", "!CrashRecovery", target == "Walk" ? "IsMoving" : "!IsMoving");
+        EditorUtility.SetDirty(machine);
+        EditorUtility.SetDirty(controller);
+    }
+
+    // One-time upgrade. Subsequent installs preserve artist-edited blend durations.
+    public static void EnsureCrashRecovery(AnimatorController controller)
+    {
+        if (controller.parameters.Any(p => p.name == "CrashRecovery")) return;
+        const string path = "Assets/Animation/PlayerSeagull/DeathHitTheGround.anim";
+        var clip = AssetDatabase.LoadAssetAtPath<AnimationClip>(path);
+        if (clip == null)
+        {
+            var source = AssetDatabase.LoadAllAssetsAtPath("Assets/ANIMALS FULL PACK/Birds Pack/Seagull/FBX Files/Seagull@DeathHitTheGround.FBX")
+                .OfType<AnimationClip>().First(c => !c.name.StartsWith("__preview"));
+            clip = Object.Instantiate(source);
+            clip.name = "DeathHitTheGround";
+            var settings = AnimationUtility.GetAnimationClipSettings(clip);
+            settings.loopTime = false;
+            AnimationUtility.SetAnimationClipSettings(clip, settings);
+            AnimationUtility.SetAnimationEvents(clip, new AnimationEvent[0]);
+            AssetDatabase.CreateAsset(clip, path);
+        }
+        var machine = controller.layers[0].stateMachine;
+        foreach (var transition in machine.anyStateTransitions.Concat(machine.states.SelectMany(s => s.state.transitions)))
+        {
+            transition.AddCondition(AnimatorConditionMode.IfNot, 0f, "CrashRecovery");
+            if (transition.destinationState != null && transition.destinationState.name == "Falling") transition.duration = .4f;
+            else if (transition.destinationState != null && (transition.destinationState.name == "Fly" || transition.destinationState.name == "Glide") &&
+                machine.states.Any(s => s.state.name == "Falling" && s.state.transitions.Contains(transition))) transition.duration = .35f;
+            EditorUtility.SetDirty(transition);
+        }
+        controller.AddParameter("CrashRecovery", AnimatorControllerParameterType.Bool);
+        var impact = machine.AddState("DeathHitTheGround", new Vector3(1150, 80));
+        impact.motion = clip;
+        // A non-looping clip holds its last prone frame until the gameplay timer expires.
+        var enter = machine.AddAnyStateTransition(impact);
+        Add(enter, false, "CrashRecovery");
+        enter.duration = .12f;
+        enter.interruptionSource = TransitionInterruptionSource.None;
+        var standing = machine.states.First(s => s.state.name == "Standing").state;
+        var recover = impact.AddTransition(standing);
+        Add(recover, false, "!CrashRecovery");
+        recover.duration = .35f;
+        EditorUtility.SetDirty(machine);
+        EditorUtility.SetDirty(controller);
+    }
+
+    [InitializeOnLoadMethod]
+    private static void ScheduleCrashUpgrade() { EditorApplication.delayCall += UpgradeCrashGraph; }
+
+    private static void UpgradeCrashGraph()
+    {
+        if (EditorApplication.isPlayingOrWillChangePlaymode) return;
+        var controller = AssetDatabase.LoadAssetAtPath<AnimatorController>("Assets/Animation/PlayerSeagull/PlayerSeagull.controller");
+        if (controller == null || controller.parameters.Any(p => p.name == "IsJumping")) return;
+        EnsureCrashRecovery(controller);
+        EnsureJump(controller);
+        AssetDatabase.SaveAssets();
     }
 
     private static void Add(AnimatorStateTransition transition, bool exitTime, params string[] conditions)

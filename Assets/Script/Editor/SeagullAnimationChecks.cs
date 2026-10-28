@@ -4,6 +4,8 @@ using UnityEngine;
 
 public static class SeagullAnimationChecks
 {
+    [MenuItem("Tools/Player/Preview Seagull Poses")]
+    private static void PreviewMenu() { Debug.Log(Preview()); }
     public static string Preview()
     {
         var scene = UnityEditor.SceneManagement.EditorSceneManager.NewPreviewScene();
@@ -34,9 +36,11 @@ public static class SeagullAnimationChecks
             rt = new RenderTexture(800,600,24);camera.targetTexture=rt;
             System.IO.Directory.CreateDirectory("Temp/SeagullChecks");
             var report = new System.Text.StringBuilder();
-            foreach (string state in new[]{"Standing","Walk","TakeOff","IdleLookAround","Fly","Glide","Falling"})
+            foreach (string state in new[]{"Standing","Walk","TakeOff","IdleLookAround","Fly","Glide","Falling","DeathHitTheGround"})
             {
-                animator.Rebind();animator.Play(state,0,state=="Standing"?0f:.4f);animator.Update(0f);
+                animator.Rebind();
+                animator.SetBool("CrashRecovery", state == "DeathHitTheGround");
+                animator.Play(state,0,state=="Standing"?0f:state=="DeathHitTheGround"?1f:.4f);animator.Update(0f);
                 Bounds b = SeagullPlayerInstaller.BakedBounds(bird);
                 report.AppendLine(state + " bounds=" + b);
                 camera.orthographicSize = Mathf.Max(.22f,b.size.magnitude*.65f);
@@ -93,6 +97,14 @@ public static class SeagullAnimationChecks
             Action<string> check = state => { if (!a.GetCurrentAnimatorStateInfo(0).IsName("Base Layer." + state))
                 throw new Exception("Animator expected " + state + ", got hash " + a.GetCurrentAnimatorStateInfo(0).fullPathHash); };
             a.SetBool("IsGrounded", true);advance(.02f);check("Standing");
+            a.SetBool("IsJumping", true);a.SetBool("IsGrounded", false);advance(.3f);check("Jump");
+            advance(.5f);check("Jump");
+            a.SetBool("IsJumping", false);a.SetBool("IsGrounded", true);advance(.3f);check("Standing");
+            a.SetBool("IsJumping", true);a.SetBool("IsGrounded", false);advance(.3f);check("Jump");
+            a.SetBool("IsJumping", false);a.SetBool("IsFlying", true);a.SetBool("IsAscending", true);a.SetTrigger("TakeOff");
+            advance(.3f);check("TakeOff");
+            advance(1.3f);check("Fly");
+            a.SetBool("IsFlying", false);a.SetBool("IsGrounded", true);advance(.4f);check("Standing");
             a.SetBool("IsMoving", true);advance(.4f);check("Walk");
             a.SetBool("IsMoving", false);advance(.4f);check("Standing");
             a.SetBool("IdleReady", true);advance(.4f);check("IdleLookAround");
@@ -104,9 +116,14 @@ public static class SeagullAnimationChecks
             a.SetBool("IsGrounded", false);advance(1.3f);check("Fly");
             a.SetBool("IsAscending", false);advance(.4f);check("Glide");
             a.SetBool("IsAscending", true);advance(.4f);check("Fly");
-            a.SetBool("IsFlying", false);advance(.4f);check("Falling");
+            a.SetBool("IsFlying", false);advance(.6f);check("Falling");
+            a.SetBool("CrashRecovery", true);a.SetBool("IsGrounded", true);advance(.3f);check("DeathHitTheGround");
+            advance(4.7f);check("DeathHitTheGround");
+            a.SetBool("CrashRecovery", false);advance(.5f);check("Standing");
+            a.SetBool("IsFlying", true);advance(.5f);check("Fly");
+            a.SetBool("IsFlying", false);a.SetBool("IsGrounded", false);advance(.6f);check("Falling");
             a.SetBool("IsGrounded", true);advance(.4f);check("Standing");
-            Debug.Log("Seagull Animator graph: 12 transition checks passed.");
+            Debug.Log("Seagull Animator graph: locomotion, smooth falling, impact, prone hold and recovery checks passed.");
         }
         finally { UnityEditor.SceneManagement.EditorSceneManager.ClosePreviewScene(scene); }
     }

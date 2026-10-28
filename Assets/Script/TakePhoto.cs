@@ -192,7 +192,7 @@ public class TakePhoto : MonoBehaviour
         try
         {
             float visibility = trackingVisibility.Measure(photoCamera, subject, 320, 180);
-            frameCoverage = trackingVisibility.VisibleFrameCoverage;
+            frameCoverage = trackingVisibility.SubjectFrameCoverage;
             return visibility;
         }
         finally
@@ -467,8 +467,9 @@ public class TakePhoto : MonoBehaviour
             subjectVisibilityFraction > 0f &&
             subjectVisibilityFraction >=
             minimumVisibleSubjectFraction;
-        // Same shutter-midpoint pixel mask as occlusion; no renderer bounding boxes.
-        float subjectFrameCoverage = photoVisibility.VisibleFrameCoverage;
+        // Tight 2D bounds from the unobstructed shutter-midpoint silhouette.
+        // Occlusion remains a separate pixel-visibility requirement.
+        float subjectFrameCoverage = photoVisibility.SubjectFrameCoverage;
         float motionMtf50Retention = CalculateMtf50Retention(
             subjectImageTravelPixels,
             sharpMtf50);
@@ -1683,7 +1684,7 @@ public class TakePhoto : MonoBehaviour
                 photoRect.width,
                 24f),
             $"{GetPhotoResultLabel(photoIndex)}    " +
-            $"Area {photoSubjectFrameCoverages[photoIndex]:P1}    " +
+            $"Frame {photoSubjectFrameCoverages[photoIndex]:P1} (2D bounds)    " +
             $"Visible {photoSubjectVisibilityFractions[photoIndex]:P0} / " +
             $"Occluded {1f - photoSubjectVisibilityFractions[photoIndex]:P0}    " +
             $"Motion {photoBlurLengths[photoIndex]:F1}px    " +
@@ -1783,7 +1784,7 @@ public class TakePhoto : MonoBehaviour
             photoMinimumFrameCoverages[photoIndex])
         {
             return
-                $"FAILED  SUBJECT AREA " +
+                $"FAILED  SUBJECT FRAME " +
                 $"{photoSubjectFrameCoverages[photoIndex]:P1} " +
                 $"<{photoMinimumFrameCoverages[photoIndex]:P1}  " +
                 GetExposureLabel(photoIndex);

@@ -43,10 +43,12 @@ public sealed class PlayerBirdAnimator : MonoBehaviour
         bool moving = new Vector2(movement.Velocity.x, movement.Velocity.z).magnitude > .08f;
         bool looking = birdAnimator.GetCurrentAnimatorStateInfo(0).IsName("Base Layer.IdleLookAround") ||
             (birdAnimator.IsInTransition(0) && birdAnimator.GetNextAnimatorStateInfo(0).IsName("Base Layer.IdleLookAround"));
-        if (movement.IsFlying || !movement.IsGrounded || moving || looking) idleTime = 0f;
+        if (movement.IsCrashRecovering || movement.IsFlying || !movement.IsGrounded || moving || looking) idleTime = 0f;
         else if (!TakePhoto.IsBackpackOpen && (GameManager.Instance == null || GameManager.Instance.IsRunning)) idleTime += Time.deltaTime;
         ascending = movement.IsFlying && movement.Velocity.y > (ascending ? .05f : .15f);
-        birdAnimator.SetBool("IsGrounded", movement.IsGrounded);
+        birdAnimator.SetBool("IsGrounded", movement.IsGrounded && !movement.IsCrashFalling && !movement.IsJumping);
+        birdAnimator.SetBool("IsJumping", movement.IsJumping);
+        birdAnimator.SetBool("CrashRecovery", movement.IsCrashRecovering);
         birdAnimator.SetBool("IsFlying", movement.IsFlying);
         birdAnimator.SetBool("IsMoving", moving);
         birdAnimator.SetBool("IsAscending", ascending);
@@ -60,4 +62,4 @@ public sealed class PlayerBirdAnimator : MonoBehaviour
     }
 }
 
-public enum BirdAnimationState { Standing, Walk, TakeOff, IdleLookAround, Fly, Glide, Falling }
+public enum BirdAnimationState { Standing, Walk, TakeOff, IdleLookAround, Fly, Glide, Falling, DeathHitTheGround, Jump }

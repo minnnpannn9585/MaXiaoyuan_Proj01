@@ -16,6 +16,8 @@ public sealed class PhotoVisibility : IDisposable
     private Texture2D readback;
     public float SubjectPixelCount { get; private set; }
     public float VisibleFrameCoverage { get; private set; }
+    /// <summary>In-frame 2D bounds of the unobstructed rendered silhouette. Occlusion is scored separately.</summary>
+    public float SubjectFrameCoverage { get; private set; }
 
     private sealed class SubjectState
     {
@@ -30,6 +32,7 @@ public sealed class PhotoVisibility : IDisposable
     {
         SubjectPixelCount = 0f;
         VisibleFrameCoverage = 0f;
+        SubjectFrameCoverage = 0f;
         if (subject == null) return 0f;
         Shader shader = Resources.Load<Shader>("PhotoSubjectMask");
         if (shader == null || !shader.isSupported)
@@ -106,15 +109,21 @@ public sealed class PhotoVisibility : IDisposable
             Color[] referenceBlack = Render(camera, states, true, 0f);
             Color[] referenceWhite = Render(camera, states, true, 1f);
             double total = 0, visible = 0;
+            int minX = width, minY = height, maxX = -1, maxY = -1;
             for (int i = 0; i < referenceWhite.Length; i++)
             {
                 float full = Difference(referenceWhite[i], referenceBlack[i]);
                 if (full < 0.01f) continue; // Only the subject footprint contributes.
+                int x = i % width, y = i / width;
+                minX = Mathf.Min(minX, x); maxX = Mathf.Max(maxX, x);
+                minY = Mathf.Min(minY, y); maxY = Mathf.Max(maxY, y);
                 total += full;
                 visible += Mathf.Min(full, Difference(visibleWhite[i], visibleBlack[i]));
             }
             SubjectPixelCount = (float)total;
             VisibleFrameCoverage = Mathf.Clamp01((float)(visible / referenceWhite.Length));
+            if (maxX >= minX && maxY >= minY)
+                SubjectFrameCoverage = (maxX - minX + 1f) * (maxY - minY + 1f) / referenceWhite.Length;
             return total < 1.0 ? 0f : Mathf.Clamp01((float)(visible / total));
         }
         finally
