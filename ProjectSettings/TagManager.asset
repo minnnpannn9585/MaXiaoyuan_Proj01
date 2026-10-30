@@ -7,6 +7,8 @@ TagManager:
   - PW - Nature
   - PW - Prop
   - PW - Building
+  - TreeBranch
+  - TreeTrunk
   layers:
   - Default
   - TransparentFX

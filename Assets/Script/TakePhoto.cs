@@ -59,6 +59,8 @@ public class TakePhoto : MonoBehaviour
     private readonly List<float> photoIsoValues = new List<float>();
     private readonly List<float> photoSubjectFrameCoverages =
         new List<float>();
+    private readonly List<Rect> photoSubjectBounds = new List<Rect>();
+    private bool showSubjectBounds = true;
     private readonly List<float> photoMinimumFrameCoverages =
         new List<float>();
     private readonly List<float> photoSubjectVisibilityFractions =
@@ -154,6 +156,7 @@ public class TakePhoto : MonoBehaviour
         photoApertures.Clear();
         photoIsoValues.Clear();
         photoSubjectFrameCoverages.Clear();
+        photoSubjectBounds.Clear();
         photoMinimumFrameCoverages.Clear();
         photoSubjectVisibilityFractions.Clear();
         photoMinimumVisibilityFractions.Clear();
@@ -191,7 +194,8 @@ public class TakePhoto : MonoBehaviour
         HideHunterFromCapture();
         try
         {
-            float visibility = trackingVisibility.Measure(photoCamera, subject, 320, 180);
+            float visibility = trackingVisibility.Measure(photoCamera, subject, 320,
+                Mathf.Max(1, Mathf.RoundToInt(320f * photoHeight / photoWidth)));
             frameCoverage = trackingVisibility.SubjectFrameCoverage;
             return visibility;
         }
@@ -429,8 +433,7 @@ public class TakePhoto : MonoBehaviour
             if (subject != null) subject.position = subjectPosition;
             photoCamera.transform.SetPositionAndRotation(cameraPosition, cameraRotation);
             subjectVisibilityFraction = photoVisibility.Measure(
-                photoCamera, subject, Mathf.Min(photoWidth, 640),
-                Mathf.Max(1, Mathf.RoundToInt(Mathf.Min(photoWidth, 640) * photoHeight / (float)photoWidth)));
+                photoCamera, subject, photoWidth, photoHeight);
 
             photo = CreateExposurePhoto(
                 red,
@@ -1139,6 +1142,7 @@ public class TakePhoto : MonoBehaviour
         photoApertures.Add(cameraSettings.Aperture);
         photoIsoValues.Add(cameraSettings.Iso);
         photoSubjectFrameCoverages.Add(subjectFrameCoverage);
+        photoSubjectBounds.Add(photoVisibility.SubjectViewportBounds);
         photoMinimumFrameCoverages.Add(minimumFrameCoverage);
         photoSubjectVisibilityFractions.Add(subjectVisibilityFraction);
         photoMinimumVisibilityFractions.Add(minimumVisibilityFraction);
@@ -1164,6 +1168,7 @@ public class TakePhoto : MonoBehaviour
             photoApertures.RemoveAt(0);
             photoIsoValues.RemoveAt(0);
             photoSubjectFrameCoverages.RemoveAt(0);
+            photoSubjectBounds.RemoveAt(0);
             photoMinimumFrameCoverages.RemoveAt(0);
             photoSubjectVisibilityFractions.RemoveAt(0);
             photoMinimumVisibilityFractions.RemoveAt(0);
@@ -1647,11 +1652,12 @@ public class TakePhoto : MonoBehaviour
         float maxWidth = screenWidth * 0.82f;
         float maxHeight = screenHeight * 0.78f;
         float width = maxWidth;
-        float height = width * 9f / 16f;
+        float photoAspect = photo.width / (float)photo.height;
+        float height = width / photoAspect;
         if (height > maxHeight)
         {
             height = maxHeight;
-            width = height * 16f / 9f;
+            width = height * photoAspect;
         }
 
         Rect photoRect = new Rect(
@@ -1661,6 +1667,22 @@ public class TakePhoto : MonoBehaviour
             height);
         GUI.Box(new Rect(photoRect.x - 8f, photoRect.y - 8f, photoRect.width + 16f, photoRect.height + 16f), string.Empty);
         GUI.DrawTexture(photoRect, photo, ScaleMode.ScaleToFit);
+        Rect subjectBounds = photoSubjectBounds[photoIndex];
+        showSubjectBounds = GUI.Toggle(new Rect(photoRect.x, photoRect.y - 36f, 220f, 26f),
+            showSubjectBounds, "Show composition bounds");
+        if (showSubjectBounds && subjectBounds.width > 0f && subjectBounds.height > 0f)
+        {
+            Rect box = new Rect(photoRect.x + subjectBounds.x * photoRect.width,
+                photoRect.y + (1f - subjectBounds.yMax) * photoRect.height,
+                subjectBounds.width * photoRect.width, subjectBounds.height * photoRect.height);
+            Color previous = GUI.color;
+            GUI.color = Color.cyan;
+            GUI.DrawTexture(new Rect(box.x, box.y, box.width, 2f), Texture2D.whiteTexture);
+            GUI.DrawTexture(new Rect(box.x, box.yMax - 2f, box.width, 2f), Texture2D.whiteTexture);
+            GUI.DrawTexture(new Rect(box.x, box.y, 2f, box.height), Texture2D.whiteTexture);
+            GUI.DrawTexture(new Rect(box.xMax - 2f, box.y, 2f, box.height), Texture2D.whiteTexture);
+            GUI.color = previous;
+        }
         string autoIsoLabel =
             photoAutoIsoStates[photoIndex]
                 ? " + Auto ISO"
@@ -1684,7 +1706,7 @@ public class TakePhoto : MonoBehaviour
                 photoRect.width,
                 24f),
             $"{GetPhotoResultLabel(photoIndex)}    " +
-            $"Frame {photoSubjectFrameCoverages[photoIndex]:P1} (2D bounds)    " +
+            $"Area {photoSubjectFrameCoverages[photoIndex]:P1} [W {subjectBounds.width:P1} x H {subjectBounds.height:P1}]    " +
             $"Visible {photoSubjectVisibilityFractions[photoIndex]:P0} / " +
             $"Occluded {1f - photoSubjectVisibilityFractions[photoIndex]:P0}    " +
             $"Motion {photoBlurLengths[photoIndex]:F1}px    " +

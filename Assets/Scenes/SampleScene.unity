@@ -21846,7 +21846,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 430896, guid: c2e9cd158e5154e4180c8bb134afd544, type: 3}
       propertyPath: m_LocalPosition.y
-      value: -0.49623433
+      value: -0.49624315
       objectReference: {fileID: 0}
     - target: {fileID: 430896, guid: c2e9cd158e5154e4180c8bb134afd544, type: 3}
       propertyPath: m_LocalPosition.z
@@ -48470,7 +48470,7 @@ MonoBehaviour:
     m_imageMaskLocation: 1
     m_strength: 1
     m_seaLevel: 9
-    m_maxWorldHeight: 61.079056
+    m_maxWorldHeight: 61.157185
     m_minWorldHeight: 0
     m_xOffSet: 0
     m_zOffSet: 0
@@ -48682,7 +48682,7 @@ MonoBehaviour:
     m_imageMaskLocation: 1
     m_strength: 1
     m_seaLevel: 9
-    m_maxWorldHeight: 61.079056
+    m_maxWorldHeight: 61.157185
     m_minWorldHeight: 0
     m_xOffSet: 0
     m_zOffSet: 0
@@ -48876,7 +48876,7 @@ MonoBehaviour:
     m_imageMaskLocation: 1
     m_strength: 1
     m_seaLevel: 9
-    m_maxWorldHeight: 61.079056
+    m_maxWorldHeight: 61.157185
     m_minWorldHeight: 0
     m_xOffSet: 0
     m_zOffSet: 0
@@ -49070,7 +49070,7 @@ MonoBehaviour:
     m_imageMaskLocation: 1
     m_strength: 1
     m_seaLevel: 9
-    m_maxWorldHeight: 61.079056
+    m_maxWorldHeight: 61.157185
     m_minWorldHeight: 0
     m_xOffSet: 0
     m_zOffSet: 0
@@ -318980,7 +318980,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   walkSpeed: 1.5
-  flightSpeed: 6
+  flightSpeed: 10
+  minimumFlightSpeed: 6
+  takeoffSpeed: 2.5
+  flightAcceleration: 2
+  keyboardSpeedAdjustment: 3
+  scrollSpeedAdjustment: 10
   flightRiseSpeed: 6
   flightDescendSpeed: 4
   airControl: 3
@@ -318991,10 +318996,10 @@ MonoBehaviour:
   jumpMoveSpeed: 0.8
   jumpAcceleration: 8
   flightTurnRate: 75
+  slowFlightTurnRate: 150
   flightTurnAcceleration: 150
   flightTurnResponse: 0.5
   flightVerticalAcceleration: 6
-  takeoffForwardSpeedRatio: 0.45
   takeoffLiftDuration: 0.35
   maxStamina: 100
   flightDrainPerSecond: 24
@@ -319086,8 +319091,8 @@ Transform:
   m_GameObject: {fileID: 638789976}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -20.976109, y: 23.52, z: -4}
-  m_LocalScale: {x: 0.21585526, y: 0.21585526, z: 0.21585526}
+  m_LocalPosition: {x: -20.976109, y: 23.627928, z: -4}
+  m_LocalScale: {x: 0.4317105, y: 0.4317105, z: 0.4317105}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 42039940}
@@ -319134,6 +319139,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   birdAnimator: {fileID: 42039939}
   idleDelay: 5
+  glideFlapInterval: 3
+  glideFlapDuration: 0.8
+  maximumBankAngle: 28
+  bankResponse: 5
 --- !u!114 &638789984
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -328023,30 +328032,6 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: f333f387e796ad04f812a0fd86ae297e, type: 3}
---- !u!114 &655918047
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: cba17d399ab86974c8ef9551f6e8f8d4, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  transformSettings:
-    translation: {x: 1389.8464, y: 146.64413, z: 1237.2158}
-    scale: {x: 5.1686354, y: 1, z: 5.1686354}
-    rotation: {x: 0, y: 0, z: 0}
-    flipScaleX: 0
-    flipScaleY: 0
-    flipScaleZ: 0
-  domainSettings:
-    noiseTypeName: Perlin
-    fractalTypeName: Fbm
-    noiseTypeParams: 
-    fractalTypeParams: '{"warpOffsets":{"x":-23.62227439880371,"y":-740.6602172851563,"z":295.54010009765627,"w":0.0},"octavesMinMax":{"x":0.0,"y":16.0},"amplitudeMinMax":{"x":0.0,"y":1.0},"frequencyMinMax":{"x":0.0,"y":2.0},"lacunarityMinMax":{"x":0.0,"y":4.0},"persistenceMinMax":{"x":0.0,"y":1.0},"warpIterationsMinMax":{"x":0.0,"y":8.0},"warpStrengthMinMax":{"x":-2.0,"y":2.0},"octaves":8.0,"amplitude":0.5978570580482483,"frequency":1.0,"persistence":0.5,"lacunarity":1.2288411855697632,"warpIterations":0.12008093297481537,"warpStrength":0.4457036256790161,"warpEnabled":true,"warpExpanded":true}'
 --- !u!4 &655919305 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 592247532482829374, guid: f333f387e796ad04f812a0fd86ae297e,
@@ -336864,7 +336849,7 @@ MonoBehaviour:
       m_warpIterations: 0.12008093
       m_warpStrength: 0.44570363
       m_warpOffset: {x: -23.622274, y: -740.6602, z: 295.5401, w: 0}
-    m_noiseSettings: {fileID: 655918047}
+    m_noiseSettings: {fileID: 1760878096}
     m_noiseToolSettings:
       worldHeightRemap: {x: 0, y: 0}
       coordSpace: 0
@@ -514392,6 +514377,11 @@ PrefabInstance:
         type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7651696070522246048, guid: 8a91754fe033b6e43b3701eeb9589cdc,
+        type: 3}
+      propertyPath: m_Materials.Array.size
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 8009441548408254674, guid: 8a91754fe033b6e43b3701eeb9589cdc,
         type: 3}
@@ -933545,6 +933535,30 @@ Transform:
     type: 3}
   m_PrefabInstance: {fileID: 2142537643}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &1760878096
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cba17d399ab86974c8ef9551f6e8f8d4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  transformSettings:
+    translation: {x: 1389.8464, y: 146.64413, z: 1237.2158}
+    scale: {x: 5.1686354, y: 1, z: 5.1686354}
+    rotation: {x: 0, y: 0, z: 0}
+    flipScaleX: 0
+    flipScaleY: 0
+    flipScaleZ: 0
+  domainSettings:
+    noiseTypeName: Perlin
+    fractalTypeName: Fbm
+    noiseTypeParams: 
+    fractalTypeParams: '{"warpOffsets":{"x":-23.62227439880371,"y":-740.6602172851563,"z":295.54010009765627,"w":0.0},"octavesMinMax":{"x":0.0,"y":16.0},"amplitudeMinMax":{"x":0.0,"y":1.0},"frequencyMinMax":{"x":0.0,"y":2.0},"lacunarityMinMax":{"x":0.0,"y":4.0},"persistenceMinMax":{"x":0.0,"y":1.0},"warpIterationsMinMax":{"x":0.0,"y":8.0},"warpStrengthMinMax":{"x":-2.0,"y":2.0},"octaves":8.0,"amplitude":0.5978570580482483,"frequency":1.0,"persistence":0.5,"lacunarity":1.2288411855697632,"warpIterations":0.12008093297481537,"warpStrength":0.4457036256790161,"warpEnabled":true,"warpExpanded":true}'
 --- !u!4 &1760931125 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 6107818941015362535, guid: 1e263f019ddd4f44a8e8e460b8c89abb,
@@ -1037066,6 +1037080,7 @@ MonoBehaviour:
   verticalTrackingErrorRatio: 0.45
   captureAimErrorDegrees: 2.2
   maximumPreferredSubjectBlurPixels: 12
+  maximumBlurWaitSeconds: 1.5
   lockedWarningDuration: 0.2
   shotCooldown: 0.9
   preferredFrameCoverage: 0.15

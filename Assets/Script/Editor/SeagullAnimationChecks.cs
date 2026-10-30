@@ -101,7 +101,7 @@ public static class SeagullAnimationChecks
             advance(.5f);check("Jump");
             a.SetBool("IsJumping", false);a.SetBool("IsGrounded", true);advance(.3f);check("Standing");
             a.SetBool("IsJumping", true);a.SetBool("IsGrounded", false);advance(.3f);check("Jump");
-            a.SetBool("IsJumping", false);a.SetBool("IsFlying", true);a.SetBool("IsAscending", true);a.SetTrigger("TakeOff");
+            a.SetBool("IsJumping", false);a.SetBool("IsFlying", true);a.SetBool("IsFlapping", true);a.SetTrigger("TakeOff");
             advance(.3f);check("TakeOff");
             advance(1.3f);check("Fly");
             a.SetBool("IsFlying", false);a.SetBool("IsGrounded", true);advance(.4f);check("Standing");
@@ -111,19 +111,27 @@ public static class SeagullAnimationChecks
             a.SetBool("IdleReady", false);a.SetBool("IsMoving", true);advance(.4f);check("Walk");
             a.SetBool("IsMoving", false);advance(.4f);
             a.SetBool("IdleReady", true);advance(.4f);a.SetBool("IdleReady", false);advance(4f);check("Standing");
-            a.SetBool("IsFlying", true);a.SetBool("IsAscending", true);a.SetTrigger("TakeOff");
+            a.SetBool("IsFlying", true);a.SetBool("IsFlapping", true);a.SetTrigger("TakeOff");
             advance(.3f);check("TakeOff");
             a.SetBool("IsGrounded", false);advance(1.3f);check("Fly");
-            a.SetBool("IsAscending", false);advance(.4f);check("Glide");
-            a.SetBool("IsAscending", true);advance(.4f);check("Fly");
+            a.SetBool("IsFlapping", false);advance(.4f);check("Glide");
+            a.SetBool("IsFlapping", true);advance(.4f);check("Fly");
             a.SetBool("IsFlying", false);advance(.6f);check("Falling");
             a.SetBool("CrashRecovery", true);a.SetBool("IsGrounded", true);advance(.3f);check("DeathHitTheGround");
-            advance(4.7f);check("DeathHitTheGround");
+            advance(2.7f);check("DeathHitTheGround");
             a.SetBool("CrashRecovery", false);advance(.5f);check("Standing");
             a.SetBool("IsFlying", true);advance(.5f);check("Fly");
             a.SetBool("IsFlying", false);a.SetBool("IsGrounded", false);advance(.6f);check("Falling");
             a.SetBool("IsGrounded", true);advance(.4f);check("Standing");
-            Debug.Log("Seagull Animator graph: locomotion, smooth falling, impact, prone hold and recovery checks passed.");
+            a.SetBool("IsFlying", true);a.SetBool("IsFlapping", true);advance(.5f);check("Fly");
+            a.SetBool("IsFlying", false);a.SetBool("IsGrounded", false);a.SetBool("TreeCrash", true);
+            advance(.12f);check("TreeCrashFall");
+            if (a.GetCurrentAnimatorStateInfo(0).speed < 2.4f) throw new Exception("Tree crash falling is too slow");
+            a.SetBool("CrashRecovery", true);a.SetBool("IsGrounded", true);advance(.1f);check("TreeCrashImpact");
+            if (a.GetCurrentAnimatorStateInfo(0).speed < 1.9f) throw new Exception("Tree impact is too slow");
+            advance(2.8f);check("TreeCrashImpact");
+            a.SetBool("CrashRecovery", false);a.SetBool("TreeCrash", false);advance(.4f);check("Standing");
+            Debug.Log("Seagull Animator: normal fall and distinct fast tree crash, landing hold and recovery passed.");
         }
         finally { UnityEditor.SceneManagement.EditorSceneManager.ClosePreviewScene(scene); }
     }

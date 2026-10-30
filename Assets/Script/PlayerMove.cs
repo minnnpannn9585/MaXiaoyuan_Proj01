@@ -11,7 +11,13 @@ public class PlayerMove : MonoBehaviour
 
     [Header("Movement")]
     [SerializeField] private float walkSpeed = 4f;
-    [SerializeField] private float flightSpeed = 10f;
+    [Header("Flight Speed / 飞行调速")]
+    [SerializeField, Min(.1f), InspectorName("最大飞行速度")] private float flightSpeed = 10f;
+    [SerializeField, Min(.1f), InspectorName("最小飞行速度")] private float minimumFlightSpeed = 2f;
+    [SerializeField, Min(.1f), InspectorName("起飞速度")] private float takeoffSpeed = 2.5f;
+    [SerializeField, Min(.1f), InspectorName("飞行加减速度")] private float flightAcceleration = 2f;
+    [SerializeField, Min(.1f), InspectorName("W/S 每秒调速量")] private float keyboardSpeedAdjustment = 3f;
+    [SerializeField, Min(.1f), InspectorName("滚轮调速灵敏度")] private float scrollSpeedAdjustment = 10f;
     [SerializeField] private float flightRiseSpeed = 5f;
     [SerializeField] private float flightDescendSpeed = 4f;
     [SerializeField] private float airControl = 3f;
@@ -27,16 +33,27 @@ public class PlayerMove : MonoBehaviour
     [SerializeField, Min(.1f), InspectorName("跳跃水平加减速")] private float jumpAcceleration = 8f;
 
     [Header("Flight Steering")]
-    [SerializeField, Min(1f)] private float flightTurnRate = 75f;
+    [SerializeField, Min(1f), InspectorName("高速最大转弯速度（度/秒）")] private float flightTurnRate = 75f;
+    [SerializeField, Min(1f), InspectorName("低速最大转弯速度（度/秒）")] private float slowFlightTurnRate = 150f;
     [SerializeField, Min(1f)] private float flightTurnAcceleration = 150f;
     [SerializeField, Min(.05f)] private float flightTurnResponse = .5f;
     [SerializeField, Min(.1f)] private float flightVerticalAcceleration = 6f;
-    [SerializeField, Range(.1f, 1f)] private float takeoffForwardSpeedRatio = .45f;
     [SerializeField, Min(0f)] private float takeoffLiftDuration = .35f;
     private float flightYawRate;
     private float takeoffLiftRemaining;
     private bool climbInput;
     private bool descendInput;
+    private float targetFlightSpeed;
+    private bool treeCrashLocked;
+    private float groundDrag;
+    public float TargetFlightSpeed => targetFlightSpeed;
+    public bool IsAdjustingFlightSpeed => isFlying &&
+        Mathf.Abs(new Vector2(Velocity.x, Velocity.z).magnitude - targetFlightSpeed) > .12f;
+    public float FlightBankInput => isFlying ? Mathf.Clamp(flightYawRate / Mathf.Max(1f, CurrentFlightTurnRate), -1f, 1f) : 0f;
+    public float CurrentFlightTurnRate => Mathf.Lerp(Mathf.Max(flightTurnRate, slowFlightTurnRate), flightTurnRate,
+        Mathf.InverseLerp(MinimumFlightSpeed, MaximumFlightSpeed, new Vector2(Velocity.x, Velocity.z).magnitude));
+    private float MaximumFlightSpeed => Mathf.Max(.1f, flightSpeed);
+    private float MinimumFlightSpeed => Mathf.Clamp(minimumFlightSpeed, .1f, MaximumFlightSpeed);
 
     [Header("Stamina")]
     [SerializeField] private float maxStamina = 100f;
@@ -44,7 +61,7 @@ public class PlayerMove : MonoBehaviour
     [SerializeField, Min(0f)] private float glideDrainPerSecond = 3f;
     [SerializeField] private float groundedRecoveryPerSecond = 18f;
     [SerializeField] private float flightRestartStamina = 15f;
-    [SerializeField, Min(0f)] private float crashRecoverySeconds = 5f;
+    [SerializeField, Min(0f)] private float crashRecoverySeconds = 3f;
 
     [Header("Ground Check")]
     [SerializeField] private float groundCheckDistance = 0.18f;
@@ -74,6 +91,7 @@ public class PlayerMove : MonoBehaviour
     public bool IsStunned => crashRecoveryRemaining > 0f;
     public bool IsCrashRecovering => IsStunned;
     public bool IsCrashFalling => crashFallPending;
+    public bool IsTreeCrash => treeCrashLocked && (crashFallPending || IsStunned);
     public Vector3 Velocity => body == null ? Vector3.zero : body.velocity;
     public int TakeoffSequence { get; private set; }
 
@@ -93,6 +111,7 @@ public class PlayerMove : MonoBehaviour
         body.collisionDetectionMode = CollisionDetectionMode.Continuous;
         body.constraints = RigidbodyConstraints.FreezeRotation;
         body.drag = 0.5f;
+        groundDrag = body.drag;
     }
 
     private void OnEnable()
@@ -137,15 +156,23 @@ public class PlayerMove : MonoBehaviour
         }
 
         moveInput = new Vector2(Input.GetAxisRaw("Horizontal"), Input.GetAxisRaw("Vertical"));
-        moveInput = Vector2.ClampMagnitude(moveInput, 1f);
+        if (!isFlying) moveInput = Vector2.ClampMagnitude(moveInput, 1f);
         climbInput = Input.GetKey(KeyCode.Space);
         descendInput = Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift);
         HandleFlightToggleInput();
+        if (isFlying)
+        {
+            AdjustFlightSpeed(moveInput.y * keyboardSpeedAdjustment * Time.deltaTime +
+                Input.GetAxis("Mouse ScrollWheel") * scrollSpeedAdjustment);
+            // A/D steer in flight; W/S only adjust the throttle.
+            moveInput.y = 0f;
+        }
     }
 
     private void FixedUpdate()
     {
         crashRecoveryRemaining = Mathf.Max(0f, crashRecoveryRemaining - Time.fixedDeltaTime);
+        if (!crashFallPending && !IsStunned) treeCrashLocked = false;
         isGrounded = CheckGrounded();
 
         bool gameRunning = GameManager.Instance == null || GameManager.Instance.IsRunning;
@@ -183,6 +210,13 @@ public class PlayerMove : MonoBehaviour
             UpdateFlightMovement(Time.fixedDeltaTime);
             return;
         }
+        // Do not route a tree-crash fall through the ordinary airborne movement controller.
+        if (treeCrashLocked && crashFallPending)
+        {
+            moveInput = Vector2.zero;
+            climbInput = descendInput = false;
+            return;
+        }
         if (TakePhoto.IsBackpackOpen)
         {
             SlowHorizontalMovement();
@@ -205,13 +239,15 @@ public class PlayerMove : MonoBehaviour
 
     private void UpdateFlightMovement(float dt)
     {
-        Vector3 desired = GetCameraRelativeDirection();
+        Vector3 desired = Mathf.Abs(moveInput.x) > .01f
+            ? Quaternion.AngleAxis(moveInput.x * 90f, Vector3.up) * (body.rotation * Vector3.forward)
+            : Vector3.zero;
         Quaternion rotation = StepFlightHeading(body.rotation, desired, ref flightYawRate,
-            flightTurnRate, flightTurnAcceleration, flightTurnResponse, dt);
+            CurrentFlightTurnRate, flightTurnAcceleration, flightTurnResponse, dt);
         Vector3 forward = rotation * Vector3.forward;
         float horizontalSpeed = new Vector2(body.velocity.x, body.velocity.z).magnitude;
-        horizontalSpeed = Mathf.MoveTowards(horizontalSpeed, flightSpeed, acceleration * dt);
-        // No input maintains forward flight. S asks for a gradual U-turn, never reverse thrust.
+        targetFlightSpeed = Mathf.Clamp(targetFlightSpeed, MinimumFlightSpeed, MaximumFlightSpeed);
+        horizontalSpeed = Mathf.MoveTowards(horizontalSpeed, targetFlightSpeed, flightAcceleration * dt);
         // Shift takes priority, including while slowing an earlier climb.
         bool climbing = !descendInput && (climbInput || takeoffLiftRemaining > 0f);
         float targetVertical = descendInput ? -flightDescendSpeed : climbing ? flightRiseSpeed : 0f;
@@ -226,6 +262,11 @@ public class PlayerMove : MonoBehaviour
             flightLocked = true;
             BeginCrashFall();
         }
+    }
+
+    private void AdjustFlightSpeed(float change)
+    {
+        targetFlightSpeed = Mathf.Clamp(targetFlightSpeed + change, MinimumFlightSpeed, MaximumFlightSpeed);
     }
 
     public static Quaternion StepFlightHeading(Quaternion rotation, Vector3 desired, ref float yawRate,
@@ -244,7 +285,7 @@ public class PlayerMove : MonoBehaviour
 
     private bool CanAcceptInput()
     {
-        return !IsStunned &&
+        return !IsStunned && !treeCrashLocked &&
                !TakePhoto.IsBackpackOpen &&
                (GameManager.Instance == null || GameManager.Instance.IsRunning);
     }
@@ -299,17 +340,20 @@ public class PlayerMove : MonoBehaviour
 
     private void EnterFlightMode()
     {
-        if (IsStunned) return;
+        if (IsStunned || treeCrashLocked) return;
         bool groundTakeoff = isGrounded || isJumping;
         isJumping = false;
         crashFallPending = false;
         isFlying = true;
         body.useGravity = false;
+        groundDrag = body.drag;
+        body.drag = 0f;
         flightYawRate = 0f;
         takeoffLiftRemaining = groundTakeoff ? takeoffLiftDuration : 0f;
         Vector3 forward = Vector3.ProjectOnPlane(transform.forward, Vector3.up).normalized;
-        float launchSpeed = Mathf.Max(new Vector2(body.velocity.x, body.velocity.z).magnitude,
-            flightSpeed * takeoffForwardSpeedRatio);
+        float launchSpeed = groundTakeoff ? Mathf.Clamp(takeoffSpeed, MinimumFlightSpeed, MaximumFlightSpeed)
+            : Mathf.Clamp(new Vector2(body.velocity.x, body.velocity.z).magnitude, MinimumFlightSpeed, MaximumFlightSpeed);
+        targetFlightSpeed = launchSpeed;
         body.velocity = forward * launchSpeed + Vector3.up * body.velocity.y;
         hasLeftTakeoffSurface = !isGrounded;
         if (groundTakeoff)
@@ -323,6 +367,7 @@ public class PlayerMove : MonoBehaviour
     {
         isFlying = false;
         body.useGravity = true;
+        body.drag = groundDrag;
         takeoffLiftRemaining = 0f;
         hasLeftTakeoffSurface = false;
         lastSpacePressTime = float.NegativeInfinity;
@@ -339,14 +384,43 @@ public class PlayerMove : MonoBehaviour
 
     private void CheckCrashImpact(Collision collision)
     {
-        if ((groundLayers.value & (1 << collision.gameObject.layer)) == 0) return;
         for (int i = 0; i < collision.contactCount; i++)
         {
-            if (collision.GetContact(i).normal.y <= .35f) continue;
+            var contact = collision.GetContact(i);
+            if (TerrainTreeTrunks.IsTrunkContact(contact.otherCollider, contact.point))
+                HandleTrunkCrash();
+        }
+        // Contacts are classified individually: a TerrainCollider may contain both trunk and ground.
+        for (int i = 0; i < collision.contactCount; i++)
+        {
+            var contact = collision.GetContact(i);
+            if (TerrainTreeTrunks.IsTrunkContact(contact.otherCollider, contact.point)) continue;
+            if ((groundLayers.value & (1 << contact.otherCollider.gameObject.layer)) == 0) continue;
+            if (contact.normal.y <= .35f) continue;
             if (isJumping && body.velocity.y <= .05f) isJumping = false;
             BeginCrashRecovery();
             break;
         }
+    }
+
+    private bool HandleFlightCollision(Collider hit)
+    {
+        if (hit == null || !hit.CompareTag("TreeTrunk")) return false;
+        return HandleTrunkCrash();
+    }
+
+    private bool HandleTrunkCrash()
+    {
+        if (isFlying)
+        {
+            treeCrashLocked = true;
+            BeginCrashFall();
+            moveInput = Vector2.zero;
+            climbInput = descendInput = false;
+            body.velocity = Vector3.up * Mathf.Min(0f, body.velocity.y);
+        }
+        // A trunk contact is not a landing; wait for ground support.
+        return crashFallPending;
     }
 
     private void BeginCrashRecovery()
@@ -387,7 +461,8 @@ public class PlayerMove : MonoBehaviour
 
         foreach (RaycastHit hit in hits)
         {
-            if (hit.collider != bodyCollider && hit.normal.y > 0.35f)
+            if (hit.collider != bodyCollider && hit.normal.y > 0.35f &&
+                !TerrainTreeTrunks.IsTrunkContact(hit.collider, hit.point))
             {
                 return true;
             }

@@ -36,7 +36,7 @@ public static class SeagullAnimatorGraph
         // Hold the pose with a running state clock so artists can also use exit times.
         if (standingState.speed == 0f) { standingState.motion = pose;standingState.speed = 1f;EditorUtility.SetDirty(standingState); }
         // Do not overwrite transition timings edited by the artist on later installs.
-        if (controller.parameters.Any(p => p.name == "IsFlying")) { EnsureCrashRecovery(controller); EnsureJump(controller); return; }
+        if (controller.parameters.Any(p => p.name == "IsFlying")) { EnsureCrashRecovery(controller); EnsureJump(controller); EnsureFlapping(controller); EnsureTreeCrash(controller); return; }
         foreach (string name in new[] { "IsGrounded", "IsFlying", "IsMoving", "IsAscending", "IdleReady" })
             controller.AddParameter(name, AnimatorControllerParameterType.Bool);
         controller.AddParameter("TakeOff", AnimatorControllerParameterType.Trigger);
@@ -74,6 +74,58 @@ public static class SeagullAnimatorGraph
         EditorUtility.SetDirty(controller);
         EnsureCrashRecovery(controller);
         EnsureJump(controller);
+        EnsureFlapping(controller);
+        EnsureTreeCrash(controller);
+    }
+
+    private static void EnsureTreeCrash(AnimatorController controller)
+    {
+        if (controller.parameters.Any(p => p.name == "TreeCrash")) return;
+        controller.AddParameter("TreeCrash", AnimatorControllerParameterType.Bool);
+        var machine = controller.layers[0].stateMachine;
+        var states = machine.states.ToDictionary(s => s.state.name, s => s.state);
+        foreach (var transition in machine.anyStateTransitions)
+        {
+            if (transition.destinationState == states["Falling"] || transition.destinationState == states["DeathHitTheGround"])
+            {
+                transition.AddCondition(AnimatorConditionMode.IfNot, 0f, "TreeCrash");
+                EditorUtility.SetDirty(transition);
+            }
+        }
+        var fall = machine.AddState("TreeCrashFall", new Vector3(850, 540));
+        fall.motion = states["Falling"].motion;
+        fall.speed = 2.5f;
+        var enter = machine.AddAnyStateTransition(fall);
+        Add(enter, false, "TreeCrash", "!IsFlying", "!IsGrounded", "!CrashRecovery");
+        enter.duration = .06f;
+        var impact = machine.AddState("TreeCrashImpact", new Vector3(1150, 540));
+        impact.motion = states["DeathHitTheGround"].motion;
+        impact.speed = 2f;
+        var hit = machine.AddAnyStateTransition(impact);
+        Add(hit, false, "TreeCrash", "CrashRecovery");
+        hit.duration = .04f;
+        hit.interruptionSource = TransitionInterruptionSource.None;
+        var recover = impact.AddTransition(states["Standing"]);
+        Add(recover, false, "!CrashRecovery");
+        recover.duration = .25f;
+        EditorUtility.SetDirty(machine);
+        EditorUtility.SetDirty(controller);
+    }
+
+    private static void EnsureFlapping(AnimatorController controller)
+    {
+        if (controller.parameters.Any(p => p.name == "IsFlapping")) return;
+        controller.AddParameter("IsFlapping", AnimatorControllerParameterType.Bool);
+        foreach (var child in controller.layers[0].stateMachine.states)
+        foreach (var transition in child.state.transitions)
+        {
+            var conditions = transition.conditions;
+            for (int i = 0; i < conditions.Length; i++)
+                if (conditions[i].parameter == "IsAscending") conditions[i].parameter = "IsFlapping";
+            transition.conditions = conditions;
+            EditorUtility.SetDirty(transition);
+        }
+        EditorUtility.SetDirty(controller);
     }
 
     private static void EnsureJump(AnimatorController controller)
@@ -160,9 +212,11 @@ public static class SeagullAnimatorGraph
     {
         if (EditorApplication.isPlayingOrWillChangePlaymode) return;
         var controller = AssetDatabase.LoadAssetAtPath<AnimatorController>("Assets/Animation/PlayerSeagull/PlayerSeagull.controller");
-        if (controller == null || controller.parameters.Any(p => p.name == "IsJumping")) return;
+        if (controller == null || controller.parameters.Any(p => p.name == "TreeCrash")) return;
         EnsureCrashRecovery(controller);
         EnsureJump(controller);
+        EnsureFlapping(controller);
+        EnsureTreeCrash(controller);
         AssetDatabase.SaveAssets();
     }
 

@@ -98,8 +98,8 @@ public class GameManager : MonoBehaviour
 
     private void DrawStatusPanel(float screenWidth)
     {
-        const float panelWidth = 430f;
-        const float panelHeight = 134f;
+        const float panelWidth = 520f;
+        const float panelHeight = 176f;
         Rect panel = new Rect(16f, 16f, panelWidth, panelHeight);
         GUI.Box(panel, string.Empty);
 
@@ -116,11 +116,14 @@ public class GameManager : MonoBehaviour
             new Rect(30f, 72f, 380f, 22f),
             $"Clear photos: {clearPlayerPhotos}/{clearPhotosToLose}    Failed photos: {failedPlayerPhotos}/{failedPhotosToWin}");
         GUI.Label(new Rect(30f, 94f, 310f, 22f), "WASD Move   Double Space Toggle Flight");
-        GUI.Label(new Rect(30f, 114f, 400f, 22f), "Flight: Space Up   Shift Down   Esc Cursor   B Open/Close Backpack");
+        GUI.Label(new Rect(30f, 114f, 500f, 22f), "Flight: A/D Turn   W/S or Wheel Speed   Space Up   Shift Down");
+        GUI.Label(new Rect(30f, 134f, 500f, 22f), "Esc Cursor   B Open/Close Backpack");
+        if (player != null && player.IsFlying)
+            GUI.Label(new Rect(30f, 154f, 500f, 22f), $"Flight speed target: {player.TargetFlightSpeed:F1} m/s");
 
         if (player != null && player.IsStunned)
         {
-            GUI.Box(new Rect(screenWidth * 0.5f - 90f, 22f, 180f, 34f), "EXHAUSTED - FALLING");
+            GUI.Box(new Rect(screenWidth * 0.5f - 90f, 22f, 180f, 34f), "RECOVERING");
         }
     }
 

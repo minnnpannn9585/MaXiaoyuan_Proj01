@@ -18,6 +18,8 @@ public sealed class PhotoVisibility : IDisposable
     public float VisibleFrameCoverage { get; private set; }
     /// <summary>In-frame 2D bounds of the unobstructed rendered silhouette. Occlusion is scored separately.</summary>
     public float SubjectFrameCoverage { get; private set; }
+    /// <summary>Normalized photo coordinates, origin at bottom-left; the exact rectangle used for scoring.</summary>
+    public Rect SubjectViewportBounds { get; private set; }
 
     private sealed class SubjectState
     {
@@ -33,6 +35,7 @@ public sealed class PhotoVisibility : IDisposable
         SubjectPixelCount = 0f;
         VisibleFrameCoverage = 0f;
         SubjectFrameCoverage = 0f;
+        SubjectViewportBounds = Rect.zero;
         if (subject == null) return 0f;
         Shader shader = Resources.Load<Shader>("PhotoSubjectMask");
         if (shader == null || !shader.isSupported)
@@ -123,7 +126,11 @@ public sealed class PhotoVisibility : IDisposable
             SubjectPixelCount = (float)total;
             VisibleFrameCoverage = Mathf.Clamp01((float)(visible / referenceWhite.Length));
             if (maxX >= minX && maxY >= minY)
-                SubjectFrameCoverage = (maxX - minX + 1f) * (maxY - minY + 1f) / referenceWhite.Length;
+            {
+                SubjectViewportBounds = new Rect(minX / (float)width, minY / (float)height,
+                    (maxX - minX + 1f) / width, (maxY - minY + 1f) / height);
+                SubjectFrameCoverage = SubjectViewportBounds.width * SubjectViewportBounds.height;
+            }
             return total < 1.0 ? 0f : Mathf.Clamp01((float)(visible / total));
         }
         finally

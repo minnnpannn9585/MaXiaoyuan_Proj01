@@ -21,6 +21,7 @@ public static class PlayerFlightChecks
             Action<string, object> set = (name, value) => typeof(PlayerMove).GetField(name, flags).SetValue(player, value);
             Action<float> tick = dt => typeof(PlayerMove).GetMethod("UpdateFlightMovement", flags).Invoke(player, new object[] { dt });
             set("body", body);set("bodyCollider", go.GetComponent<Collider>());set("currentStamina", 100f);set("isFlying", true);
+            set("targetFlightSpeed", 10f);
             body.useGravity = false;body.velocity = Vector3.forward * 10f;
             for (int i = 0; i < 100; i++) tick(.02f);
             Require(Mathf.Abs(player.CurrentStamina - 94f) < .01f, "glide should cost 3 stamina/sec");
@@ -39,15 +40,15 @@ public static class PlayerFlightChecks
             Require(!player.IsFlying && player.IsCrashFalling && !player.IsStunned, "exhaustion must arm impact, not stun mid-air");
             typeof(PlayerMove).GetMethod("BeginCrashRecovery", flags).Invoke(player, null);
             Require(player.IsStunned && !player.IsCrashFalling, "impact must start recovery");
-            Require((float)typeof(PlayerMove).GetField("crashRecoveryRemaining", flags).GetValue(player) == 5f, "impact must lock movement for five seconds");
+            Require((float)typeof(PlayerMove).GetField("crashRecoveryRemaining", flags).GetValue(player) == 3f, "impact must lock movement for three seconds");
             typeof(PlayerMove).GetMethod("EnterFlightMode", flags).Invoke(player, null);
             Require(!player.IsFlying, "cannot take off during crash recovery");
             var fixedTick = typeof(PlayerMove).GetMethod("FixedUpdate", flags);
-            int lockedSteps = Mathf.FloorToInt(4.9f / Time.fixedDeltaTime);
+            int lockedSteps = Mathf.FloorToInt(2.9f / Time.fixedDeltaTime);
             for (int i = 0; i < lockedSteps; i++) fixedTick.Invoke(player, null);
-            Require(player.IsStunned, "recovered before five seconds");
+            Require(player.IsStunned, "recovered before three seconds");
             for (int i = 0; i < Mathf.CeilToInt(.2f / Time.fixedDeltaTime); i++) fixedTick.Invoke(player, null);
-            Require(!player.IsStunned, "recovery did not expire after five seconds");
+            Require(!player.IsStunned, "recovery did not expire after three seconds");
             set("currentStamina", 100f);
             float yawRate = 0f;Quaternion rotation = Quaternion.identity;
             for (int i = 0; i < 100; i++)
@@ -82,7 +83,36 @@ public static class PlayerFlightChecks
             set("isFlying", false);set("isGrounded", true);set("crashRecoveryRemaining", 5f);
             press.Invoke(player, new object[] { 11f });
             Require(!player.IsJumping && !player.IsFlying, "stun must block jump and flight input");
-            return "Flight stamina/steering, crash recovery timer, immediate jump, no double jump, jump-to-flight and stun input lock: PASS";
+            set("crashRecoveryRemaining", 0f);set("isGrounded", true);set("isJumping", false);
+            body.velocity = Vector3.forward * 10f;
+            typeof(PlayerMove).GetMethod("EnterFlightMode", flags).Invoke(player, null);
+            Require(Mathf.Abs(player.TargetFlightSpeed - 2.5f) < .001f && Mathf.Abs(body.velocity.z - 2.5f) < .001f, "takeoff must start slowly, ignoring walk momentum");
+            var adjust = typeof(PlayerMove).GetMethod("AdjustFlightSpeed", flags);
+            adjust.Invoke(player, new object[] { 100f });Require(player.TargetFlightSpeed == 10f, "maximum throttle clamp");Require(player.IsAdjustingFlightSpeed, "acceleration must flap");
+            adjust.Invoke(player, new object[] { -100f });Require(player.TargetFlightSpeed == 2f, "minimum throttle clamp");
+            set("moveInput", Vector2.up);set("takeoffLiftRemaining", 0f);set("climbInput", false);body.rotation = Quaternion.identity;
+            tick(.02f);Require(Mathf.Abs((float)typeof(PlayerMove).GetField("flightYawRate", flags).GetValue(player)) < .001f, "W must not steer");
+            body.velocity = Vector3.forward * 2f;Require(!player.IsAdjustingFlightSpeed, "steady speed should glide");float lowRate=player.CurrentFlightTurnRate;
+            body.velocity = Vector3.forward * 10f;Require(player.IsAdjustingFlightSpeed, "deceleration must flap");Require(lowRate > player.CurrentFlightTurnRate && player.CurrentFlightTurnRate == 75f, "speed-dependent turning");
+            set("moveInput", Vector2.right);tick(.02f);Require(player.FlightBankInput > 0f, "right turn bank signal");
+            var obstacle = new GameObject("Test tree");UnityEngine.SceneManagement.SceneManager.MoveGameObjectToScene(obstacle, scene);
+            var collider=obstacle.AddComponent<BoxCollider>();var collide=typeof(PlayerMove).GetMethod("HandleFlightCollision", flags);
+            obstacle.tag="TreeBranch";collide.Invoke(player,new object[]{collider});Require(player.IsFlying, "branch must not trigger trunk crash");
+            obstacle.tag="TreeTrunk";collide.Invoke(player,new object[]{collider});Require(!player.IsFlying && player.IsCrashFalling && !player.IsStunned && body.useGravity, "trunk crash must fall before recovery");
+            typeof(PlayerMove).GetMethod("EnterFlightMode", flags).Invoke(player,null);Require(!player.IsFlying,"trunk crash cannot be cancelled in air");
+            typeof(PlayerMove).GetMethod("BeginCrashRecovery",flags).Invoke(player,null);Require(player.IsStunned,"trunk landing recovery");
+            Require(player.IsTreeCrash, "tree crash cause must persist through landing");
+            for (int i=0; i<Mathf.FloorToInt(2.9f/Time.fixedDeltaTime); i++) fixedTick.Invoke(player,null);
+            Require(player.IsStunned && player.IsTreeCrash, "fast impact animation must not shorten three-second stun");
+            for (int i=0; i<Mathf.CeilToInt(.2f/Time.fixedDeltaTime); i++) fixedTick.Invoke(player,null);
+            Require(!player.IsStunned && !player.IsTreeCrash, "tree recovery must clear impact cause");
+            var animator=go.AddComponent<PlayerBirdAnimator>();var flap=typeof(PlayerBirdAnimator).GetMethod("UpdateGlideFlapping",flags);
+            Require(!(bool)flap.Invoke(animator,new object[]{true,false,2.9f}),"glide interval");
+            Require((bool)flap.Invoke(animator,new object[]{true,false,.2f}),"glide flap burst");
+            Require(!(bool)flap.Invoke(animator,new object[]{true,false,.8f}),"return to glide");
+            Require((bool)flap.Invoke(animator,new object[]{true,true,.1f}),"climb continuous flapping");
+            Require(!(bool)flap.Invoke(animator,new object[]{false,false,.1f}),"fall resets flapping");
+            return "Flight stamina, throttle clamps, slow takeoff, speed-dependent steering/bank, trunk-vs-branch crash, glide bursts, jump and recovery: PASS";
         }
         finally { EditorSceneManager.ClosePreviewScene(scene); }
     }

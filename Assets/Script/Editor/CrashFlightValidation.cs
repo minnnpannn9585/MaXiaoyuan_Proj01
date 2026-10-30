@@ -31,7 +31,7 @@ public static class CrashFlightValidation
             if (child.state.name != "DeathHitTheGround") continue;
             var clip = (AnimationClip)child.state.motion;
             if (clip.isLooping) throw new Exception("Impact clip must hold its last frame.");
-            if (clip.length > 5f) throw new Exception("Impact clip exceeds recovery duration.");
+            if (clip.length > 3f) throw new Exception("Impact clip exceeds recovery duration.");
         }
         Directory.CreateDirectory("Temp/SeagullChecks");
         File.WriteAllText("Temp/SeagullChecks/CrashFlightValidation.txt", movement + "\nAnimator impact, hold and recovery: PASS\n" + DateTime.Now);
