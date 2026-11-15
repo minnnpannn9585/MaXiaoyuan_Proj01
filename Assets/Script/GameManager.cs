@@ -19,7 +19,11 @@ public class GameManager : MonoBehaviour
     private int clearPlayerPhotos;
     private int failedPlayerPhotos;
 
-    public bool IsRunning => state == GameState.Running;
+    public bool IsRunning => state == GameState.Running && !GameFlow.BlocksGameplay;
+    public bool HasEnded => state != GameState.Running;
+    public bool HasWon => state == GameState.Won;
+    public int ClearPhotosToLose => clearPhotosToLose;
+    public int FailedPhotosToWin => failedPhotosToWin;
     public int ClearPlayerPhotos => clearPlayerPhotos;
     public int FailedPlayerPhotos => failedPlayerPhotos;
 
@@ -32,6 +36,7 @@ public class GameManager : MonoBehaviour
         }
 
         Instance = this;
+        if(GameFlow.Instance==null)gameObject.AddComponent<GameFlow>();
     }
 
     private void OnDestroy()
@@ -44,7 +49,7 @@ public class GameManager : MonoBehaviour
 
     private void Update()
     {
-        if (!IsRunning && Input.GetKeyDown(KeyCode.R))
+        if (GameFlow.Instance==null && HasEnded && Input.GetKeyDown(KeyCode.R))
         {
             Time.timeScale = 1f;
             SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
@@ -81,6 +86,7 @@ public class GameManager : MonoBehaviour
 
     private void OnGUI()
     {
+        if(GameFlow.Instance!=null)return;
         float scale = Mathf.Clamp(Screen.height / 720f, 0.8f, 1.5f);
         Matrix4x4 previousMatrix = GUI.matrix;
         GUI.matrix = Matrix4x4.Scale(new Vector3(scale, scale, 1f));

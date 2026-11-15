@@ -1,0 +1,59 @@
+#pragma kernel Develop
+#pragma kernel Denoise
+Texture2D<float4> _Input;
+RWTexture2D<float4> _Output;
+StructuredBuffer<uint> _Jumps;
+int _Width, _Height;
+uint _Seed;
+float _Multiplier, _IsoGain, _DenoiseStrength;
+uint Step(inout uint s) { s^=s<<13;s^=s>>17;s^=s<<5;return s; }
+float Uniform(inout uint s) { return ((Step(s)>>8)+.5)/16777216.0; }
+float Gaussian(inout uint s)
+{
+    float a=Uniform(s),b=Uniform(s);
+    return sqrt(-2*log(a))*cos(6.28318530718*b);
+}
+// Jump directly to the CPU algorithm's random state for this pixel (8 draws/pixel).
+// GF(2) powers preserve the existing seeded noise pattern rather than replacing it.
+uint PixelState(uint index)
+{
+    uint state=max(1u,_Seed);
+    for(uint power=0;index!=0;power++,index>>=1)
+        if(index&1)
+        {
+            uint value=0,bits=state;
+            while(bits!=0)
+            {
+                uint bit=firstbitlow(bits);value^=_Jumps[power*32+bit];bits&=bits-1;
+            }
+            state=value;
+        }
+    return state;
+}
+float Linear(float s) { return s<=.04045?s/12.92:pow((s+.055)/1.055,2.4); }
+float Gamma(float s) { s=saturate(s);return s<=.0031308?12.92*s:1.055*pow(s,1.0/2.4)-.055; }
+float Variance(float signal) { float read=3*_IsoGain/20000;return max(0,signal)*_IsoGain/20000+read*read; }
+[numthreads(8,8,1)]
+void Develop(uint3 p:SV_DispatchThreadID)
+{
+    if(p.x>=(uint)_Width || p.y>=(uint)_Height)return;
+    float3 s=round(saturate(_Input[p.xy].rgb)*255)/255;
+    float3 c=float3(Linear(s.r),Linear(s.g),Linear(s.b))*_Multiplier;
+    float luminance=dot(c,float3(.2126,.7152,.0722));
+    uint state=PixelState(p.y*_Width+p.x);
+    float common=Gaussian(state)*sqrt(.75*Variance(luminance));
+    float r=Gaussian(state),g=Gaussian(state),b=Gaussian(state);
+    c+=common+float3(r,g,b)*sqrt(.25*float3(Variance(c.r),Variance(c.g),Variance(c.b)));
+    _Output[p.xy]=float4(round(float3(Gamma(c.r),Gamma(c.g),Gamma(c.b))*255)/255,1);
+}
+[numthreads(8,8,1)]
+void Denoise(uint3 p:SV_DispatchThreadID)
+{
+    if(p.x>=(uint)_Width || p.y>=(uint)_Height)return;
+    float3 center=round(_Input[p.xy].rgb*255);
+    if(p.x==0 || p.y==0 || p.x==(uint)_Width-1 || p.y==(uint)_Height-1)
+    { _Output[p.xy]=float4(center/255,1);return; }
+    float3 sum=0;
+    for(int y=-1;y<=1;y++) for(int x=-1;x<=1;x++) sum+=round(_Input[int2(p.xy)+int2(x,y)].rgb*255);
+    _Output[p.xy]=float4(round(lerp(center,sum/9,_DenoiseStrength))/255,1);
+}

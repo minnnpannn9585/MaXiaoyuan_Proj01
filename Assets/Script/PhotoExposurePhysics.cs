@@ -17,7 +17,11 @@ public enum PhotoExposureMode
 public static class PhotoExposurePhysics
 {
     private const float ReferenceIso = 100f;
-    private const float BaseNoiseStandardDeviation = 0.0035f;
+    // Approximate sensor model (electrons), not a calibration for a specific camera.
+    private const float FullWellElectrons = 20000f;
+    private const float ReadNoiseElectrons = 3f;
+    private const float LuminanceWeightSquares = 0.2126f * 0.2126f +
+        0.7152f * 0.7152f + 0.0722f * 0.0722f;
     private const float ReferenceSignalLevel = 0.18f;
     private static readonly float[] StandardApertures =
     {
@@ -41,6 +45,7 @@ public static class PhotoExposurePhysics
         public float EffectiveExposureValue;
         public float RelativeStops;
         public float NoiseStandardDeviation;
+        public float IsoGain;
         public float SignalToNoiseRatioDecibels;
         public float DenoisedMtf50Retention;
     }
@@ -229,10 +234,6 @@ public static class PhotoExposurePhysics
             2f,
             meteredSceneExposureValue100 - exposureValue100);
         float isoGain = safeIso / ReferenceIso;
-        float noiseStandardDeviation =
-            BaseNoiseStandardDeviation *
-            Mathf.Sqrt(Mathf.Max(0.0001f, sensorExposure)) *
-            isoGain;
         float sceneLuminanceScale = Mathf.Pow(
             2f,
             meteredSceneExposureValue100 -
@@ -241,6 +242,10 @@ public static class PhotoExposurePhysics
             ReferenceSignalLevel *
             sceneLuminanceScale *
             outputMultiplier;
+        // Same linear-light variance as ApplyToPixels at the metered reference grey.
+        float noiseStandardDeviation = Mathf.Sqrt(
+            OutputNoiseVariance(outputSignal, isoGain) *
+            (0.75f + 0.25f * LuminanceWeightSquares));
         float signalToNoiseRatio =
             outputSignal /
             Mathf.Max(0.000001f, noiseStandardDeviation);
@@ -258,6 +263,7 @@ public static class PhotoExposurePhysics
             EffectiveExposureValue = effectiveExposureValue,
             RelativeStops = relativeStops,
             NoiseStandardDeviation = noiseStandardDeviation,
+            IsoGain = isoGain,
             SignalToNoiseRatioDecibels = signalToNoiseRatioDecibels,
             DenoisedMtf50Retention = denoisedMtf50Retention
         };
@@ -279,31 +285,26 @@ public static class PhotoExposurePhysics
             float green = Mathf.GammaToLinearSpace(source.g / 255f);
             float blue = Mathf.GammaToLinearSpace(source.b / 255f);
 
+            red *= exposure.OutputMultiplier;
+            green *= exposure.OutputMultiplier;
+            blue *= exposure.OutputMultiplier;
             float luminance =
                 red * 0.2126f +
                 green * 0.7152f +
                 blue * 0.0722f;
-            float shotNoiseScale =
-                exposure.NoiseStandardDeviation *
-                Mathf.Sqrt(Mathf.Max(0.02f, luminance));
+            // Input/output are linear light. Do not attenuate noise a second time
+            // using the unexposed render: local electron count already sets shot noise.
+            float isoGain = Mathf.Max(0.25f, exposure.IsoGain);
             float commonNoise =
-                NextSignedNoise(ref randomState) *
-                shotNoiseScale;
-            float colorNoiseScale =
-                exposure.NoiseStandardDeviation * 0.35f;
-
-            red =
-                red * exposure.OutputMultiplier +
-                commonNoise +
-                NextSignedNoise(ref randomState) * colorNoiseScale;
-            green =
-                green * exposure.OutputMultiplier +
-                commonNoise +
-                NextSignedNoise(ref randomState) * colorNoiseScale;
-            blue =
-                blue * exposure.OutputMultiplier +
-                commonNoise +
-                NextSignedNoise(ref randomState) * colorNoiseScale;
+                NextGaussian(ref randomState) *
+                Mathf.Sqrt(0.75f * OutputNoiseVariance(luminance, isoGain));
+            // Correlated luminance plus independent chroma approximates demosaicing.
+            red += commonNoise + NextGaussian(ref randomState) *
+                Mathf.Sqrt(0.25f * OutputNoiseVariance(red, isoGain));
+            green += commonNoise + NextGaussian(ref randomState) *
+                Mathf.Sqrt(0.25f * OutputNoiseVariance(green, isoGain));
+            blue += commonNoise + NextGaussian(ref randomState) *
+                Mathf.Sqrt(0.25f * OutputNoiseVariance(blue, isoGain));
 
             pixels[i] = new Color32(
                 ToGammaByte(red),
@@ -372,12 +373,26 @@ public static class PhotoExposurePhysics
         }
     }
 
-    private static float NextSignedNoise(ref uint state)
+    private static float OutputNoiseVariance(float outputSignal, float isoGain)
+    {
+        // Poisson shot variance + sensor read variance, both amplified by ISO.
+        float read = ReadNoiseElectrons * isoGain / FullWellElectrons;
+        return Mathf.Max(0f, outputSignal) * isoGain / FullWellElectrons + read * read;
+    }
+
+    private static float NextUniform(ref uint state)
     {
         state ^= state << 13;
         state ^= state >> 17;
         state ^= state << 5;
-        return state / (float)uint.MaxValue * 2f - 1f;
+        return ((state >> 8) + 0.5f) / 16777216f;
+    }
+
+    private static float NextGaussian(ref uint state)
+    {
+        // Box-Muller: unit variance, unlike the previous uniform [-1,1] sample.
+        return Mathf.Sqrt(-2f * Mathf.Log(NextUniform(ref state))) *
+            Mathf.Cos(2f * Mathf.PI * NextUniform(ref state));
     }
 
     private static byte ToGammaByte(float linear)

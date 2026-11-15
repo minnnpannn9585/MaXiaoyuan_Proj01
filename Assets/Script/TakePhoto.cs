@@ -1,10 +1,13 @@
+using System.Collections;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
 
 public class TakePhoto : MonoBehaviour
 {
+    private static string T(string zh,string en) => GameLanguage.Text(zh,en);
     private struct MtfEdgeCandidate
     {
         public int X;
@@ -75,6 +78,24 @@ public class TakePhoto : MonoBehaviour
     private Camera photoCamera;
     private RenderTexture photoTarget;
     private Texture2D exposureReadback;
+    private readonly PhotoGpuDevelopment gpuDevelopment = new PhotoGpuDevelopment();
+    private PhotoShutterSnapshot shutterSnapshot;
+    [Header("Background Photo Processing")]
+    [SerializeField, Range(32, 512)] private int processingRowsPerFrame = 128;
+    public int LastShutterFrame { get; private set; }
+    public int LastCompletionFrame { get; private set; }
+    public float LastSubjectCoverage { get; private set; }
+    public float LastSubjectVisibility { get; private set; }
+    private RenderTexture meterTarget;
+    private Material exposureAccumulator;
+    private AsyncGPUReadbackRequest pendingReadback;
+    private bool readbackPending;
+    public bool IsProcessing { get; private set; }
+    public float LastShutterMilliseconds { get; private set; }
+    public float LastMeterMilliseconds { get; private set; }
+    public float LastExposureRenderMilliseconds { get; private set; }
+    public float LastVisibilityMilliseconds { get; private set; }
+    public float LastProcessingMilliseconds { get; private set; }
     private Volume photoFocusVolume;
     private VolumeProfile photoFocusProfile;
     private DepthOfField photoDepthOfField;
@@ -92,10 +113,19 @@ public class TakePhoto : MonoBehaviour
     {
         Instance = this;
         EnsurePhotoCamera();
+        EnsureShutterSnapshot();
+        EnsureExposureReadback();
+        EnsureExposureAccumulator();
+        photoVisibility.Prewarm(photoWidth, photoHeight);
     }
 
     private void OnDestroy()
     {
+        if (readbackPending) pendingReadback.WaitForCompletion();
+        gpuDevelopment.Dispose();
+        shutterSnapshot?.Dispose();
+        if (meterTarget != null) { meterTarget.Release(); Destroy(meterTarget); }
+        if (exposureAccumulator != null) Destroy(exposureAccumulator);
         photoVisibility.Dispose();
         trackingVisibility.Dispose();
         if (Instance == this)
@@ -164,12 +194,13 @@ public class TakePhoto : MonoBehaviour
 
     private void Update()
     {
+        if(GameFlow.BlocksGameplay)return;
         if (Input.GetKeyDown(KeyCode.B))
         {
             SetBackpackOpen(!backpackOpen);
         }
 
-        if (backpackOpen && selectedPhotoIndex >= 0 && Input.GetKeyDown(KeyCode.Escape))
+        if (GameFlow.Instance==null && backpackOpen && selectedPhotoIndex >= 0 && Input.GetKeyDown(KeyCode.Escape))
         {
             selectedPhotoIndex = -1;
         }
@@ -205,7 +236,7 @@ public class TakePhoto : MonoBehaviour
         }
     }
 
-    public bool Capture(
+    public IEnumerator Capture(
         Vector3 origin,
         Vector3 direction,
         Transform subject,
@@ -237,296 +268,285 @@ public class TakePhoto : MonoBehaviour
         float sharpMtf50,
         float minimumMtf50Retention,
         float minimumSubjectFrameCoverage,
-        float minimumVisibleSubjectFraction)
+        float minimumVisibleSubjectFraction,
+        System.Action<bool> onCompleted)
     {
-        if (direction.sqrMagnitude < 0.0001f)
-        {
-            return false;
-        }
-
-        EnsurePhotoCamera();
-        ConfigurePhotoCameraFromMain(focalLengthMillimeters);
-
-        Vector3 lookDirection = direction.normalized;
-        photoCamera.transform.SetPositionAndRotation(
-            origin + lookDirection * cameraForwardOffset,
-            Quaternion.LookRotation(lookDirection, Vector3.up));
-
-        Vector3 cameraPosition = photoCamera.transform.position;
-        Quaternion cameraRotation = photoCamera.transform.rotation;
-        Vector3 subjectPosition = subject == null ? Vector3.zero : subject.position;
-        float opticalFocusDistanceMeters = Mathf.Max(
-            focalLengthMillimeters * 0.001f + 0.001f,
-            focusDistanceMeters - cameraForwardOffset);
-        float meteredSceneExposureValue100 =
-            MeasureSceneExposureValue100(sceneExposureValue100);
-        PhotoExposurePhysics.CameraSettings cameraSettings =
-            PhotoExposurePhysics.ResolveCameraSettings(
-                exposureMode,
-                autoIso,
-                new PhotoExposurePhysics.CameraSettings
-                {
-                    ShutterSpeed = shutterSpeed,
-                    Aperture = aperture,
-                    Iso = iso
-                },
-                new PhotoExposurePhysics.CameraLimits
-                {
-                    MaximumAperture = lensMaximumAperture,
-                    MinimumAperture = lensMinimumAperture,
-                    SlowestShutterSpeed = slowestAutomaticShutterSpeed,
-                    FastestShutterSpeed = fastestAutomaticShutterSpeed,
-                    MinimumAutoIsoShutterSpeed =
-                        minimumAutoIsoShutterSpeed,
-                    MinimumIso = minimumAutomaticIso,
-                    MaximumIso = maximumAutomaticIso
-                },
-                meteredSceneExposureValue100,
-                exposureCompensation,
-                focalLengthMillimeters);
-        Vector3 subjectFocusPoint = GetSubjectFocusPoint(
-            subject,
-            cameraPosition);
-        float subjectDistanceMeters = Mathf.Max(
-            0.01f,
-            Vector3.Dot(
-                subjectFocusPoint - cameraPosition,
-                cameraRotation * Vector3.forward));
-        PhotoBlurPhysics.Solution blurSolution =
-            PhotoBlurPhysics.Solve(
-                cameraPosition,
-                cameraRotation,
-                cameraLinearVelocity,
-                cameraAngularVelocity,
-                subjectPosition,
-                subjectVelocity,
-                focalLengthMillimeters,
-                cameraSettings.ShutterSpeed,
-                sensorPixelPitchMicrometers,
-                GetEffectiveSensorHeightMillimeters(),
-                photoHeight,
-                motionBlurScale);
-        PhotoExposurePhysics.Solution exposureSolution =
-            PhotoExposurePhysics.Solve(
-                cameraSettings.ShutterSpeed,
-                cameraSettings.Aperture,
-                cameraSettings.Iso,
-                sceneExposureValue100,
-                meteredSceneExposureValue100);
-        PhotoDepthOfFieldPhysics.Solution depthOfFieldSolution =
-            PhotoDepthOfFieldPhysics.Solve(
-                focalLengthMillimeters,
-                cameraSettings.Aperture,
-                opticalFocusDistanceMeters,
-                subjectDistanceMeters,
-                sensorPixelPitchMicrometers,
-                sharpMtf50);
-        ConfigurePhotoDepthOfField(
-            focalLengthMillimeters,
-            cameraSettings.Aperture,
-            opticalFocusDistanceMeters);
-        int motionSampleCount = blurSolution.SamplingBlurLengthPixels > 0.01f
-            ? CalculateExposureSampleCount(
-                blurSolution.SamplingBlurLengthPixels)
-            : 1;
-        int depthOfFieldSampleCount = enablePhysicalDepthOfField
-            ? Mathf.Max(2, physicalDepthOfFieldSamples)
-            : 1;
-        int sampleCount = Mathf.Max(
-            motionSampleCount,
-            depthOfFieldSampleCount);
-        float apertureRadiusMeters =
-            focalLengthMillimeters /
-            Mathf.Max(1f, cameraSettings.Aperture) *
-            0.0005f;
-        float subjectImageTravelPixels =
-            blurSolution.BlurLengthPixels;
-
-        HideHunterFromCapture();
-        RenderTexture previousActive = RenderTexture.active;
-        Texture2D photo = null;
-        float subjectVisibilityFraction = 0f;
+        if (IsProcessing) yield break;
+        IsProcessing = true;
         try
         {
-            if (photoFocusVolume != null &&
-                enablePhotoPostProcessing)
+            var shutterTimer = System.Diagnostics.Stopwatch.StartNew();
+            if (direction.sqrMagnitude < 0.0001f)
             {
-                photoFocusVolume.enabled = true;
+                yield break;
             }
 
-            photoCamera.targetTexture = photoTarget;
-            EnsureExposureReadback();
+            EnsurePhotoCamera();
+            ConfigurePhotoCameraFromMain(focalLengthMillimeters);
 
-            int pixelCount = photoWidth * photoHeight;
-            int[] red = new int[pixelCount];
-            int[] green = new int[pixelCount];
-            int[] blue = new int[pixelCount];
+            Vector3 lookDirection = direction.normalized;
+            photoCamera.transform.SetPositionAndRotation(
+                origin + lookDirection * cameraForwardOffset,
+                Quaternion.LookRotation(lookDirection, Vector3.up));
 
-            for (int sample = 0; sample < sampleCount; sample++)
-            {
-                float exposurePosition = sampleCount == 1
-                    ? 0f
-                    : sample / (sampleCount - 1f) - 0.5f;
-                float sampleTime =
-                    exposurePosition *
-                    blurSolution.ExposureSeconds;
-                float renderedSampleTime =
-                    sampleTime *
-                    blurSolution.TrajectoryScale;
-
-                Vector3 motionPosition =
-                    cameraPosition +
-                    cameraLinearVelocity * renderedSampleTime;
-                Quaternion motionRotation =
-                    PhotoBlurPhysics.IntegrateAngularVelocity(
-                        cameraRotation,
-                        cameraAngularVelocity,
-                        renderedSampleTime);
-                Vector2 apertureOffset = GetApertureSampleOffset(
-                    sample,
-                    sampleCount,
-                    apertureRadiusMeters,
-                    depthOfFieldSampleCount > 1);
-                Vector3 lensPosition =
-                    motionPosition +
-                    motionRotation * new Vector3(
-                        apertureOffset.x,
-                        apertureOffset.y,
-                        0f);
-                Vector3 focalPoint =
-                    motionPosition +
-                    motionRotation *
-                    (Vector3.forward * opticalFocusDistanceMeters);
-                Quaternion lensRotation = apertureOffset.sqrMagnitude >
-                    0.0000000001f
-                    ? Quaternion.LookRotation(
-                        focalPoint - lensPosition,
-                        motionRotation * Vector3.up)
-                    : motionRotation;
-                photoCamera.transform.SetPositionAndRotation(
-                    lensPosition,
-                    lensRotation);
-
-                if (subject != null)
-                {
-                    subject.position =
-                        subjectPosition +
-                        subjectVelocity * renderedSampleTime;
-                }
-
-                photoCamera.Render();
-                RenderTexture.active = photoTarget;
-                exposureReadback.ReadPixels(
-                    new Rect(0f, 0f, photoWidth, photoHeight),
-                    0,
-                    0,
-                    false);
-                exposureReadback.Apply(false, false);
-                AccumulateExposure(
-                    exposureReadback.GetPixels32(),
-                    red,
-                    green,
-                    blue);
-            }
-
-            // Measure at the shutter midpoint, with the hunter still hidden.
-            if (subject != null) subject.position = subjectPosition;
-            photoCamera.transform.SetPositionAndRotation(cameraPosition, cameraRotation);
-            subjectVisibilityFraction = photoVisibility.Measure(
-                photoCamera, subject, photoWidth, photoHeight);
-
-            photo = CreateExposurePhoto(
-                red,
-                green,
-                blue,
-                sampleCount,
-                exposureSolution,
-                noiseReductionMode);
-        }
-        finally
-        {
-            if (subject != null)
-            {
-                subject.position = subjectPosition;
-            }
-
-            photoCamera.transform.SetPositionAndRotation(cameraPosition, cameraRotation);
-            RenderTexture.active = previousActive;
-            photoCamera.targetTexture = null;
-            if (photoFocusVolume != null)
-            {
-                photoFocusVolume.enabled = false;
-            }
-
-            RestoreHunterAfterCapture();
-        }
-
-        if (photo == null)
-        {
-            return false;
-        }
-
-        bool capturedPlayer =
-            subjectVisibilityFraction > 0f &&
-            subjectVisibilityFraction >=
-            minimumVisibleSubjectFraction;
-        // Tight 2D bounds from the unobstructed shutter-midpoint silhouette.
-        // Occlusion remains a separate pixel-visibility requirement.
-        float subjectFrameCoverage = photoVisibility.SubjectFrameCoverage;
-        float motionMtf50Retention = CalculateMtf50Retention(
-            subjectImageTravelPixels,
-            sharpMtf50);
-        float predictedMtf50Retention =
-            motionMtf50Retention *
-            depthOfFieldSolution.Mtf50Retention;
-        if (noiseReductionMode == PhotoNoiseReductionMode.Enabled)
-        {
-            predictedMtf50Retention *=
-                exposureSolution.DenoisedMtf50Retention;
-        }
-        float measuredMtf50Retention =
-            MeasureSubjectMtf50Retention(
-                photo,
+            Vector3 cameraPosition = photoCamera.transform.position;
+            Quaternion cameraRotation = photoCamera.transform.rotation;
+            Vector3 subjectPosition = subject == null ? Vector3.zero : subject.position;
+            float opticalFocusDistanceMeters = Mathf.Max(
+                focalLengthMillimeters * 0.001f + 0.001f,
+                focusDistanceMeters - cameraForwardOffset);
+            int captureWidth = photoWidth, captureHeight = photoHeight;
+            int baseOpticsSamples = physicalDepthOfFieldSamples;
+            int rowsPerFrame = Mathf.Clamp(processingRowsPerFrame, 32, 512);
+            bool depthOfFieldEnabled = enablePhysicalDepthOfField;
+            float sensorHeight = GetEffectiveSensorHeightMillimeters();
+            LastShutterFrame = Time.frameCount;
+            Vector3 subjectFocusPoint = GetSubjectFocusPoint(
                 subject,
+                cameraPosition);
+            float subjectDistanceMeters = Mathf.Max(
+                0.01f,
+                Vector3.Dot(
+                    subjectFocusPoint - cameraPosition,
+                    cameraRotation * Vector3.forward));
+            TryGetSubjectPixelRect(subject, out RectInt shutterPixelRect);
+            EnsureShutterSnapshot();
+            EnsureExposureAccumulator();
+            EnsureExposureReadback();
+            RenderTexture previousActive = RenderTexture.active;
+            var photoData = photoCamera.GetUniversalAdditionalCameraData();
+            bool previousDepth = photoData.requiresDepthTexture;
+            Texture2D photo = null;
+            float subjectVisibilityFraction = 0f;
+            HideHunterFromCapture();
+            try
+            {
+                photoData.requiresDepthTexture = true;
+                photoCamera.targetTexture = photoTarget;
+                // A single image/depth capture freezes bird pose, vegetation, light and camera time.
+                photoCamera.Render();
+                shutterSnapshot.CopyDepth(photoCamera);
+                RenderTexture.active = shutterSnapshot.Color;
+                GL.Clear(false, true, Color.clear);
+                exposureAccumulator.SetFloat("_Weight", 1f);
+                Graphics.Blit(photoTarget, shutterSnapshot.Color, exposureAccumulator);
+                // Meter exactly the saved shutter image, without a second scene render.
+                Graphics.Blit(photoTarget, meterTarget);
+                LastExposureRenderMilliseconds = (float)shutterTimer.Elapsed.TotalMilliseconds;
+                photoVisibility.BeginMeasure(photoCamera, subject, captureWidth, captureHeight);
+                photoVisibility.CopyVisibleSnapshot(shutterSnapshot);
+            }
+            finally
+            {
+                photoData.requiresDepthTexture = previousDepth;
+                photoCamera.targetTexture = null;
+                RenderTexture.active = previousActive;
+                RestoreHunterAfterCapture();
+            }
+            LastShutterMilliseconds = (float)shutterTimer.Elapsed.TotalMilliseconds;
+            LastVisibilityMilliseconds = LastShutterMilliseconds - LastExposureRenderMilliseconds;
+            Color32[] meterPixels = null;
+            int meterWidth = meterTarget.width, meterHeight = meterTarget.height;
+            if (SystemInfo.supportsAsyncGPUReadback)
+            {
+                pendingReadback = AsyncGPUReadback.Request(meterTarget, 0, TextureFormat.RGBA32);
+                readbackPending = true;
+                // Always hand control back immediately after freezing the shutter.
+                yield return null;
+                while (!pendingReadback.done) yield return null;
+                readbackPending = false;
+                if (!pendingReadback.hasError) meterPixels = pendingReadback.GetData<Color32>().ToArray();
+            }
+            else yield return null;
+            if (meterPixels == null)
+            {
+                var active = RenderTexture.active;
+                try
+                {
+                    RenderTexture.active = meterTarget;
+                    exposureReadback.ReadPixels(new Rect(0, 0, meterWidth, meterHeight), 0, 0, false);
+                    meterPixels = exposureReadback.GetPixels32();
+                }
+                finally { RenderTexture.active = active; }
+            }
+            var meterTimer = System.Diagnostics.Stopwatch.StartNew();
+            float meteredSceneExposureValue100 = MeterSavedPixels(meterPixels, meterWidth, meterHeight, sceneExposureValue100);
+            LastMeterMilliseconds = (float)meterTimer.Elapsed.TotalMilliseconds;
+            while (!photoVisibility.TryComplete(out subjectVisibilityFraction)) yield return null;
+            LastSubjectCoverage = photoVisibility.SubjectFrameCoverage;
+            LastSubjectVisibility = subjectVisibilityFraction;
+            PhotoExposurePhysics.CameraSettings cameraSettings =
+                PhotoExposurePhysics.ResolveCameraSettings(
+                    exposureMode,
+                    autoIso,
+                    new PhotoExposurePhysics.CameraSettings
+                    {
+                        ShutterSpeed = shutterSpeed,
+                        Aperture = aperture,
+                        Iso = iso
+                    },
+                    new PhotoExposurePhysics.CameraLimits
+                    {
+                        MaximumAperture = lensMaximumAperture,
+                        MinimumAperture = lensMinimumAperture,
+                        SlowestShutterSpeed = slowestAutomaticShutterSpeed,
+                        FastestShutterSpeed = fastestAutomaticShutterSpeed,
+                        MinimumAutoIsoShutterSpeed =
+                            minimumAutoIsoShutterSpeed,
+                        MinimumIso = minimumAutomaticIso,
+                        MaximumIso = maximumAutomaticIso
+                    },
+                    meteredSceneExposureValue100,
+                    exposureCompensation,
+                    focalLengthMillimeters);
+            PhotoBlurPhysics.Solution blurSolution =
+                PhotoBlurPhysics.Solve(
+                    cameraPosition,
+                    cameraRotation,
+                    cameraLinearVelocity,
+                    cameraAngularVelocity,
+                    subjectPosition,
+                    subjectVelocity,
+                    focalLengthMillimeters,
+                    cameraSettings.ShutterSpeed,
+                    sensorPixelPitchMicrometers,
+                    sensorHeight,
+                    captureHeight,
+                    motionBlurScale);
+            PhotoExposurePhysics.Solution exposureSolution =
+                PhotoExposurePhysics.Solve(
+                    cameraSettings.ShutterSpeed,
+                    cameraSettings.Aperture,
+                    cameraSettings.Iso,
+                    sceneExposureValue100,
+                    meteredSceneExposureValue100);
+            PhotoDepthOfFieldPhysics.Solution depthOfFieldSolution =
+                PhotoDepthOfFieldPhysics.Solve(
+                    focalLengthMillimeters,
+                    cameraSettings.Aperture,
+                    opticalFocusDistanceMeters,
+                    subjectDistanceMeters,
+                    sensorPixelPitchMicrometers,
+                    sharpMtf50);
+            float subjectImageTravelPixels = blurSolution.BlurLengthPixels;
+            int opticsSamples = Mathf.Clamp(Mathf.Max(baseOpticsSamples * 4,
+                CalculateExposureSampleCount(blurSolution.SamplingBlurLengthPixels)), 8, 64);
+            Quaternion inverseCamera = Quaternion.Inverse(cameraRotation);
+            float focalPixels = focalLengthMillimeters * captureHeight / sensorHeight;
+            for (int row = 0; row < captureHeight; row += rowsPerFrame)
+            {
+                shutterSnapshot.DevelopRows(row, rowsPerFrame, opticsSamples,
+                    focalLengthMillimeters, cameraSettings.Aperture, opticalFocusDistanceMeters,
+                    sensorHeight, blurSolution.ExposureSeconds * blurSolution.TrajectoryScale,
+                    focalPixels, depthOfFieldEnabled, inverseCamera * cameraLinearVelocity,
+                    inverseCamera * subjectVelocity, inverseCamera * cameraAngularVelocity * Mathf.Deg2Rad);
+                yield return null;
+            }
+            bool gpuDeveloped = PhotoGpuDevelopment.Supported;
+            RenderTexture developedTarget = gpuDeveloped
+                ? gpuDevelopment.Process(shutterSnapshot.Developed, exposureSolution, photos.Count + 1, noiseReductionMode) : shutterSnapshot.Developed;
+            Color32[] pixels = null;
+            if (SystemInfo.supportsAsyncGPUReadback)
+            {
+                pendingReadback = AsyncGPUReadback.Request(developedTarget, 0, TextureFormat.RGBA32);
+                readbackPending = true;
+                while (!pendingReadback.done) yield return null;
+                readbackPending = false;
+                if (!pendingReadback.hasError) pixels = pendingReadback.GetData<Color32>().ToArray();
+            }
+            if (pixels == null)
+            {
+                // Compatibility fallback for graphics devices without asynchronous readback.
+                var active = RenderTexture.active;
+                var fallback = new Texture2D(captureWidth, captureHeight, TextureFormat.RGBA32, false, true);
+                try
+                {
+                    RenderTexture.active = developedTarget;
+                    fallback.ReadPixels(new Rect(0, 0, captureWidth, captureHeight), 0, 0, false);
+                    pixels = fallback.GetPixels32();
+                }
+                finally { RenderTexture.active = active; Destroy(fallback); }
+            }
+            while (!photoVisibility.TryComplete(out subjectVisibilityFraction)) yield return null;
+            int width = captureWidth, height = captureHeight, seed = photos.Count + 1;
+            var processingTimer = System.Diagnostics.Stopwatch.StartNew();
+            // This task owns only managed pixels and value snapshots; no scene/texture access.
+            var processing = Task.Run(() =>
+            {
+                if (!gpuDeveloped) PhotoExposurePhysics.ApplyToPixels(pixels, exposureSolution, seed, width, height, noiseReductionMode);
+                return MeasureSubjectMtf50Retention(pixels, width, shutterPixelRect, sharpMtf50);
+            });
+            while (!processing.IsCompleted) yield return null;
+            if (processing.IsFaulted) { Debug.LogException(processing.Exception); yield break; }
+            LastProcessingMilliseconds = (float)processingTimer.Elapsed.TotalMilliseconds;
+            photo = new Texture2D(width, height, TextureFormat.RGB24, false)
+            { name = $"HunterPhoto_{seed}", filterMode = FilterMode.Bilinear, wrapMode = TextureWrapMode.Clamp };
+            photo.SetPixels32(pixels);
+            photo.Apply(false, false);
+
+            bool capturedPlayer =
+                subjectVisibilityFraction > 0f &&
+                subjectVisibilityFraction >=
+                minimumVisibleSubjectFraction;
+            // Tight 2D bounds from the unobstructed shutter-midpoint silhouette.
+            // Occlusion remains a separate pixel-visibility requirement.
+            float subjectFrameCoverage = photoVisibility.SubjectFrameCoverage;
+            float motionMtf50Retention = CalculateMtf50Retention(
+                subjectImageTravelPixels,
                 sharpMtf50);
-        float mtf50Retention = Mathf.Min(
-            predictedMtf50Retention,
-            measuredMtf50Retention);
-        bool usableExposure =
-            exposureSolution.RelativeStops >= minimumUsableExposureStops &&
-            exposureSolution.RelativeStops <= maximumUsableExposureStops;
-        bool usableNoiseQuality =
-            noiseReductionMode == PhotoNoiseReductionMode.Enabled ||
-            exposureSolution.SignalToNoiseRatioDecibels >=
-                minimumSignalToNoiseRatioDecibels;
-        bool successfulPhoto =
-            capturedPlayer &&
-            subjectFrameCoverage >= minimumSubjectFrameCoverage &&
-            usableExposure &&
-            usableNoiseQuality &&
-            mtf50Retention >= minimumMtf50Retention;
-        StorePhoto(
-            photo,
-            successfulPhoto,
-            capturedPlayer,
-            mtf50Retention,
-            subjectImageTravelPixels,
-            exposureSolution.RelativeStops,
-            usableExposure,
-            exposureSolution.SignalToNoiseRatioDecibels,
-            noiseReductionMode,
-            usableNoiseQuality,
-            opticalFocusDistanceMeters,
-            depthOfFieldSolution.DefocusBlurDiameterPixels,
-            exposureMode,
-            autoIso,
-            cameraSettings,
-            subjectFrameCoverage,
-            minimumSubjectFrameCoverage,
-            subjectVisibilityFraction,
-            minimumVisibleSubjectFraction);
-        lastCaptureTime = Time.unscaledTime;
-        return successfulPhoto;
+            float predictedMtf50Retention =
+                motionMtf50Retention *
+                depthOfFieldSolution.Mtf50Retention;
+            if (noiseReductionMode == PhotoNoiseReductionMode.Enabled)
+            {
+                predictedMtf50Retention *=
+                    exposureSolution.DenoisedMtf50Retention;
+            }
+            float measuredMtf50Retention = processing.Result;
+            float mtf50Retention = Mathf.Min(
+                predictedMtf50Retention,
+                measuredMtf50Retention);
+            bool usableExposure =
+                exposureSolution.RelativeStops >= minimumUsableExposureStops &&
+                exposureSolution.RelativeStops <= maximumUsableExposureStops;
+            bool usableNoiseQuality =
+                noiseReductionMode == PhotoNoiseReductionMode.Enabled ||
+                exposureSolution.SignalToNoiseRatioDecibels >=
+                    minimumSignalToNoiseRatioDecibels;
+            bool successfulPhoto =
+                capturedPlayer &&
+                subjectFrameCoverage >= minimumSubjectFrameCoverage &&
+                usableExposure &&
+                usableNoiseQuality &&
+                mtf50Retention >= minimumMtf50Retention;
+            StorePhoto(
+                photo,
+                successfulPhoto,
+                capturedPlayer,
+                mtf50Retention,
+                subjectImageTravelPixels,
+                exposureSolution.RelativeStops,
+                usableExposure,
+                exposureSolution.SignalToNoiseRatioDecibels,
+                noiseReductionMode,
+                usableNoiseQuality,
+                opticalFocusDistanceMeters,
+                depthOfFieldSolution.DefocusBlurDiameterPixels,
+                exposureMode,
+                autoIso,
+                cameraSettings,
+                subjectFrameCoverage,
+                minimumSubjectFrameCoverage,
+                subjectVisibilityFraction,
+                minimumVisibleSubjectFraction);
+            lastCaptureTime = Time.unscaledTime;
+            LastCompletionFrame = Time.frameCount;
+            // A pause must not discard an in-flight score. Scene destruction stops the coroutine.
+            while (GameFlow.BlocksGameplay && GameManager.Instance != null && !GameManager.Instance.HasEnded)
+                yield return null;
+            onCompleted?.Invoke(successfulPhoto);
+        }
+        finally { IsProcessing = false; }
     }
 
     private static Vector3 GetSubjectFocusPoint(
@@ -636,18 +656,9 @@ public class TakePhoto : MonoBehaviour
         return Mathf.Clamp01(blurredMtf50 / sharpFrequency);
     }
 
-    private float MeasureSubjectMtf50Retention(
-        Texture2D photo,
-        Transform subject,
-        float sharpMtf50)
+    private static float MeasureSubjectMtf50Retention(
+        Color32[] pixels, int photoWidth, RectInt pixelRect, float sharpMtf50)
     {
-        if (photo == null ||
-            !TryGetSubjectPixelRect(subject, out RectInt pixelRect))
-        {
-            return 0f;
-        }
-
-        Color32[] pixels = photo.GetPixels32();
         int width = pixelRect.width;
         int height = pixelRect.height;
         if (width < 15 || height < 15)
@@ -658,7 +669,7 @@ public class TakePhoto : MonoBehaviour
         float[] luminance = new float[width * height];
         for (int y = 0; y < height; y++)
         {
-            int sourceRow = (pixelRect.yMin + y) * photo.width;
+            int sourceRow = (pixelRect.yMin + y) * photoWidth;
             int targetRow = y * width;
             for (int x = 0; x < width; x++)
             {
@@ -990,30 +1001,25 @@ public class TakePhoto : MonoBehaviour
         return Mathf.Lerp(lower, upper, blendY);
     }
 
+    private void EnsureShutterSnapshot()
+    {
+        if (shutterSnapshot != null && shutterSnapshot.Width == photoWidth && shutterSnapshot.Height == photoHeight) return;
+        shutterSnapshot?.Dispose();
+        shutterSnapshot = new PhotoShutterSnapshot(photoWidth, photoHeight);
+    }
+
     private void EnsureExposureReadback()
     {
-        if (exposureReadback != null &&
-            exposureReadback.width == photoWidth &&
-            exposureReadback.height == photoHeight)
-        {
-            return;
-        }
-
-        if (exposureReadback != null)
-        {
-            Destroy(exposureReadback);
-        }
-
-        exposureReadback = new Texture2D(
-            photoWidth,
-            photoHeight,
-            TextureFormat.RGB24,
-            false)
-        {
-            name = "HunterExposureReadback",
-            filterMode = FilterMode.Bilinear,
-            wrapMode = TextureWrapMode.Clamp
-        };
+        // Metering needs brightness statistics, not a second full-resolution photo.
+        int width = Mathf.Max(1, photoWidth / 8), height = Mathf.Max(1, photoHeight / 8);
+        if (exposureReadback != null && exposureReadback.width == width && exposureReadback.height == height) return;
+        if (exposureReadback != null) Destroy(exposureReadback);
+        if (meterTarget != null) { meterTarget.Release(); Destroy(meterTarget); }
+        meterTarget = new RenderTexture(width, height, 24, RenderTextureFormat.ARGB32)
+        { name = "PhotoMeter", hideFlags = HideFlags.HideAndDontSave };
+        meterTarget.Create();
+        exposureReadback = new Texture2D(width, height, TextureFormat.RGB24, false)
+        { name = "HunterExposureReadback", hideFlags = HideFlags.HideAndDontSave };
     }
 
     private static int CalculateExposureSampleCount(float blurLengthPixels)
@@ -1026,80 +1032,16 @@ public class TakePhoto : MonoBehaviour
             MaximumExposureSamples);
     }
 
-    private static Vector2 GetApertureSampleOffset(
-        int sampleIndex,
-        int sampleCount,
-        float apertureRadiusMeters,
-        bool enabled)
+    private void EnsureExposureAccumulator()
     {
-        if (!enabled || apertureRadiusMeters <= 0f)
+        if (exposureAccumulator == null)
         {
-            return Vector2.zero;
+            var shader = Resources.Load<Shader>("PhotoExposureAccumulate");
+            if (shader == null || !shader.isSupported)
+                throw new System.InvalidOperationException("Photo accumulation shader unavailable.");
+            exposureAccumulator = new Material(shader) { hideFlags = HideFlags.HideAndDontSave };
         }
 
-        const float goldenAngleRadians = 2.39996323f;
-        float normalizedRadius = Mathf.Sqrt(
-            (sampleIndex + 0.5f) / Mathf.Max(1, sampleCount));
-        float angle = sampleIndex * goldenAngleRadians;
-        return new Vector2(
-            Mathf.Cos(angle),
-            Mathf.Sin(angle)) *
-            (normalizedRadius * apertureRadiusMeters);
-    }
-
-    private static void AccumulateExposure(
-        Color32[] pixels,
-        int[] red,
-        int[] green,
-        int[] blue)
-    {
-        for (int i = 0; i < pixels.Length; i++)
-        {
-            red[i] += pixels[i].r;
-            green[i] += pixels[i].g;
-            blue[i] += pixels[i].b;
-        }
-    }
-
-    private Texture2D CreateExposurePhoto(
-        int[] red,
-        int[] green,
-        int[] blue,
-        int sampleCount,
-        PhotoExposurePhysics.Solution exposure,
-        PhotoNoiseReductionMode noiseReductionMode)
-    {
-        Color32[] averagedPixels = new Color32[red.Length];
-        for (int i = 0; i < averagedPixels.Length; i++)
-        {
-            averagedPixels[i] = new Color32(
-                (byte)(red[i] / sampleCount),
-                (byte)(green[i] / sampleCount),
-                (byte)(blue[i] / sampleCount),
-                byte.MaxValue);
-        }
-
-        PhotoExposurePhysics.ApplyToPixels(
-            averagedPixels,
-            exposure,
-            photos.Count + 1,
-            photoWidth,
-            photoHeight,
-            noiseReductionMode);
-
-        Texture2D photo = new Texture2D(
-            photoWidth,
-            photoHeight,
-            TextureFormat.RGB24,
-            false)
-        {
-            name = $"HunterPhoto_{photos.Count + 1}",
-            filterMode = FilterMode.Bilinear,
-            wrapMode = TextureWrapMode.Clamp
-        };
-        photo.SetPixels32(averagedPixels);
-        photo.Apply(false, false);
-        return photo;
     }
 
     private void StorePhoto(
@@ -1181,6 +1123,8 @@ public class TakePhoto : MonoBehaviour
 
         backpackPage = Mathf.Max(0, (photos.Count - 1) / GetPhotosPerPage());
     }
+
+    public void CloseBackpack() { SetBackpackOpen(false); }
 
     private void SetBackpackOpen(bool open)
     {
@@ -1303,42 +1247,20 @@ public class TakePhoto : MonoBehaviour
             Mathf.Clamp(focalLengthMillimeters, 1f, 300f);
     }
 
-    private float MeasureSceneExposureValue100(
+    private static float MeterSavedPixels(Color32[] pixels, int meterWidth, int meterHeight,
         float calibratedSceneExposureValue100)
     {
-        EnsureExposureReadback();
-        RenderTexture previousActive = RenderTexture.active;
-        RenderTexture previousTarget = photoCamera.targetTexture;
-        try
-        {
-            photoCamera.targetTexture = photoTarget;
-            photoCamera.Render();
-            RenderTexture.active = photoTarget;
-            exposureReadback.ReadPixels(
-                new Rect(0f, 0f, photoWidth, photoHeight),
-                0,
-                0,
-                false);
-            exposureReadback.Apply(false, false);
-        }
-        finally
-        {
-            RenderTexture.active = previousActive;
-            photoCamera.targetTexture = previousTarget;
-        }
-
-        Color32[] pixels = exposureReadback.GetPixels32();
         double weightedLogLuminance = 0.0;
         double totalWeight = 0.0;
-        const int sampleStride = 8;
-        for (int y = sampleStride / 2; y < photoHeight; y += sampleStride)
+        const int sampleStride = 1;
+        for (int y = sampleStride / 2; y < meterHeight; y += sampleStride)
         {
             float normalizedY =
-                (y + 0.5f) / photoHeight * 2f - 1f;
-            for (int x = sampleStride / 2; x < photoWidth; x += sampleStride)
+                (y + 0.5f) / meterHeight * 2f - 1f;
+            for (int x = sampleStride / 2; x < meterWidth; x += sampleStride)
             {
                 float normalizedX =
-                    (x + 0.5f) / photoWidth * 2f - 1f;
+                    (x + 0.5f) / meterWidth * 2f - 1f;
                 float radius = Mathf.Sqrt(
                     normalizedX * normalizedX +
                     normalizedY * normalizedY);
@@ -1346,7 +1268,7 @@ public class TakePhoto : MonoBehaviour
                     0.2f,
                     1f,
                     1f - Mathf.Clamp01(radius));
-                Color32 pixel = pixels[y * photoWidth + x];
+                Color32 pixel = pixels[y * meterWidth + x];
                 float red = Mathf.GammaToLinearSpace(pixel.r / 255f);
                 float green = Mathf.GammaToLinearSpace(pixel.g / 255f);
                 float blue = Mathf.GammaToLinearSpace(pixel.b / 255f);
@@ -1448,6 +1370,9 @@ public class TakePhoto : MonoBehaviour
 
     private void OnGUI()
     {
+        if(GameFlow.BlocksGameplay)return;
+        Font oldFont=GUI.skin.font;
+        if(GameLanguage.Font!=null)GUI.skin.font=GameLanguage.Font;
         float scale = Mathf.Clamp(Screen.height / 720f, 0.8f, 1.5f);
         Matrix4x4 previousMatrix = GUI.matrix;
         int previousDepth = GUI.depth;
@@ -1466,6 +1391,7 @@ public class TakePhoto : MonoBehaviour
 
         GUI.matrix = previousMatrix;
         GUI.depth = previousDepth;
+        GUI.skin.font=oldFont;
     }
 
     private void EnsureGuiStyles()
@@ -1495,6 +1421,12 @@ public class TakePhoto : MonoBehaviour
 
     private void DrawCaptureToast(float screenWidth, float screenHeight)
     {
+        if (IsProcessing && !backpackOpen)
+        {
+            GUI.Box(new Rect(screenWidth - 306f, screenHeight - 82f, 290f, 54f),
+                T("照片处理中…\n可以继续移动", "Processing photo…\nKeep playing"));
+            return;
+        }
         if (photos.Count == 0 || Time.unscaledTime - lastCaptureTime > 2.4f || backpackOpen)
         {
             return;
@@ -1550,18 +1482,18 @@ public class TakePhoto : MonoBehaviour
 
         GUI.Label(
             new Rect(panel.x + 24f, panel.y + 16f, 420f, 36f),
-            $"Photographer Backpack  {photos.Count}/{maxStoredPhotos}",
+            T("摄影师的照片", "Photographer Backpack")+$"  {photos.Count}/{maxStoredPhotos}"+(IsProcessing?T(" · 处理中…", " · Processing…"):string.Empty),
             overlayTitleStyle);
         GUI.Label(
             new Rect(panel.xMax - 360f, panel.y + 20f, 336f, 28f),
-            "Click a photo to enlarge    B Close",
+            T("点击照片放大    B 关闭", "Click a photo to enlarge    B Close"),
             overlayHintStyle);
 
         if (photos.Count == 0)
         {
             GUI.Label(
                 new Rect(panel.x, panel.y + 80f, panel.width, 80f),
-                "No photos yet. The hunter will take a 16:9 shot when firing.",
+                T("还没有照片。摄影师拍摄后，照片会出现在这里。", "No photos yet. The photographer's shots will appear here."),
                 emptyStyle);
             return;
         }
@@ -1604,7 +1536,7 @@ public class TakePhoto : MonoBehaviour
             GUI.DrawTexture(cell, photos[photoIndex], ScaleMode.ScaleToFit);
             GUI.Label(
                 new Rect(cell.x, cell.yMax + 2f, cell.width, 20f),
-                $"Photo {photoIndex + 1}  {GetPhotoResultLabel(photoIndex)}");
+                T("照片", "Photo")+$" {photoIndex + 1}  {GetPhotoResultLabel(photoIndex)}");
             GUI.Label(
                 new Rect(cell.x, cell.yMax + 22f, cell.width, 20f),
                 GetPhotoSettingsLabel(photoIndex));
@@ -1614,13 +1546,13 @@ public class TakePhoto : MonoBehaviour
         {
             float navY = panel.yMax - 56f;
             GUI.enabled = backpackPage > 0;
-            if (GUI.Button(new Rect(panel.x + 28f, navY, 90f, 32f), "Prev"))
+            if (GUI.Button(new Rect(panel.x + 28f, navY, 90f, 32f), T("上一页", "Prev")))
             {
                 backpackPage--;
             }
 
             GUI.enabled = backpackPage < pageCount - 1;
-            if (GUI.Button(new Rect(panel.xMax - 118f, navY, 90f, 32f), "Next"))
+            if (GUI.Button(new Rect(panel.xMax - 118f, navY, 90f, 32f), T("下一页", "Next")))
             {
                 backpackPage++;
             }
@@ -1628,7 +1560,7 @@ public class TakePhoto : MonoBehaviour
             GUI.enabled = true;
             GUI.Label(
                 new Rect(panel.x, navY, panel.width, 32f),
-                $"Page {backpackPage + 1}/{pageCount}",
+                T("页码", "Page")+$" {backpackPage + 1}/{pageCount}",
                 emptyStyle);
         }
 
@@ -1669,7 +1601,7 @@ public class TakePhoto : MonoBehaviour
         GUI.DrawTexture(photoRect, photo, ScaleMode.ScaleToFit);
         Rect subjectBounds = photoSubjectBounds[photoIndex];
         showSubjectBounds = GUI.Toggle(new Rect(photoRect.x, photoRect.y - 36f, 220f, 26f),
-            showSubjectBounds, "Show composition bounds");
+            showSubjectBounds, T("显示主体构图框", "Show composition bounds"));
         if (showSubjectBounds && subjectBounds.width > 0f && subjectBounds.height > 0f)
         {
             Rect box = new Rect(photoRect.x + subjectBounds.x * photoRect.width,
@@ -1685,7 +1617,7 @@ public class TakePhoto : MonoBehaviour
         }
         string autoIsoLabel =
             photoAutoIsoStates[photoIndex]
-                ? " + Auto ISO"
+                ? T(" + 自动 ISO", " + Auto ISO")
                 : string.Empty;
         GUI.Label(
             new Rect(
@@ -1693,11 +1625,11 @@ public class TakePhoto : MonoBehaviour
                 photoRect.yMax + 12f,
                 photoRect.width,
                 24f),
-            $"{photoExposureModes[photoIndex]}{autoIsoLabel}    " +
+            ExposureModeName(photoExposureModes[photoIndex])+$"{autoIsoLabel}    " +
             $"1/{photoShutterSpeeds[photoIndex]:F0}s    " +
             $"f/{photoApertures[photoIndex]:F1}    " +
             $"ISO {photoIsoValues[photoIndex]:F0}    " +
-            $"Focus {photoFocusDistances[photoIndex]:F1}m",
+            T("对焦 ", "Focus ")+$"{photoFocusDistances[photoIndex]:F1}m",
             overlayHintStyle);
         GUI.Label(
             new Rect(
@@ -1706,16 +1638,16 @@ public class TakePhoto : MonoBehaviour
                 photoRect.width,
                 24f),
             $"{GetPhotoResultLabel(photoIndex)}    " +
-            $"Area {photoSubjectFrameCoverages[photoIndex]:P1} [W {subjectBounds.width:P1} x H {subjectBounds.height:P1}]    " +
-            $"Visible {photoSubjectVisibilityFractions[photoIndex]:P0} / " +
-            $"Occluded {1f - photoSubjectVisibilityFractions[photoIndex]:P0}    " +
-            $"Motion {photoBlurLengths[photoIndex]:F1}px    " +
-            $"Defocus {photoDefocusBlurDiameters[photoIndex]:F1}px",
+            T("占比 ", "Area ")+$"{photoSubjectFrameCoverages[photoIndex]:P1} [W {subjectBounds.width:P1} x H {subjectBounds.height:P1}]    " +
+            T("可见 ", "Visible ")+$"{photoSubjectVisibilityFractions[photoIndex]:P0} / " +
+            T("遮挡 ", "Occluded ")+$"{1f - photoSubjectVisibilityFractions[photoIndex]:P0}    " +
+            T("运动模糊 ", "Motion ")+$"{photoBlurLengths[photoIndex]:F1}px    " +
+            T("失焦 ", "Defocus ")+$"{photoDefocusBlurDiameters[photoIndex]:F1}px",
             overlayHintStyle);
 
         Rect backButtonRect = new Rect(photoRect.xMax - 90f, photoRect.y - 44f, 90f, 32f);
         float scale = Mathf.Clamp(Screen.height / 720f, 0.8f, 1.5f);
-        Vector2 mouse = Event.current.mousePosition / scale;
+        Vector2 mouse = Event.current.mousePosition;
         if (Event.current.type == EventType.MouseDown &&
             !photoRect.Contains(mouse) &&
             !backButtonRect.Contains(mouse))
@@ -1725,7 +1657,7 @@ public class TakePhoto : MonoBehaviour
             return;
         }
 
-        if (GUI.Button(backButtonRect, "Back"))
+        if (GUI.Button(backButtonRect, T("返回", "Back")))
         {
             selectedPhotoIndex = -1;
         }
@@ -1734,6 +1666,17 @@ public class TakePhoto : MonoBehaviour
     private static int GetPhotosPerPage()
     {
         return 8;
+    }
+
+    private static string ExposureModeName(PhotoExposureMode mode)
+    {
+        switch(mode)
+        {
+            case PhotoExposureMode.AperturePriority:return T("光圈优先","Aperture priority");
+            case PhotoExposureMode.ShutterPriority:return T("快门优先","Shutter priority");
+            case PhotoExposureMode.ProgramAuto:return T("程序自动","Program auto");
+            default:return T("手动","Manual");
+        }
     }
 
     private string GetPhotoSettingsLabel(int photoIndex)
@@ -1756,7 +1699,7 @@ public class TakePhoto : MonoBehaviour
         }
 
         string autoIsoLabel =
-            photoAutoIsoStates[photoIndex] ? "+AutoISO" : string.Empty;
+            photoAutoIsoStates[photoIndex] ? T("+自动ISO","+AutoISO") : string.Empty;
         return
             $"{modeLabel}{autoIsoLabel}  " +
             $"1/{photoShutterSpeeds[photoIndex]:F0}s  " +
@@ -1778,11 +1721,11 @@ public class TakePhoto : MonoBehaviour
             string quality =
                 photoNoiseReductionModes[photoIndex] ==
                 PhotoNoiseReductionMode.Enabled
-                    ? $"DENOISED  MTF50 {photoMtf50Retentions[photoIndex]:P0}"
+                    ? T("已降噪  ","DENOISED  ")+$"MTF50 {photoMtf50Retentions[photoIndex]:P0}"
                     : $"MTF50 {photoMtf50Retentions[photoIndex]:P0}  " +
                         $"SNR {photoSignalToNoiseRatios[photoIndex]:F0}dB";
             return
-                $"CLEAR  {quality}  " +
+                T("合格  ","CLEAR  ")+$"{quality}  " +
                 GetExposureLabel(photoIndex);
         }
 
@@ -1791,14 +1734,14 @@ public class TakePhoto : MonoBehaviour
             if (photoSubjectsInFrame[photoIndex])
             {
                 return
-                    $"FAILED  OCCLUDED " +
+                    T("失败  遮挡 ","FAILED  OCCLUDED ") +
                     $"{photoSubjectVisibilityFractions[photoIndex]:P0} " +
                     $"<{photoMinimumVisibilityFractions[photoIndex]:P0}  " +
                     GetExposureLabel(photoIndex);
             }
 
             return
-                $"FAILED  NO PLAYER  " +
+                T("失败  未拍到玩家  ","FAILED  NO PLAYER  ") +
                 GetExposureLabel(photoIndex);
         }
 
@@ -1806,7 +1749,7 @@ public class TakePhoto : MonoBehaviour
             photoMinimumFrameCoverages[photoIndex])
         {
             return
-                $"FAILED  SUBJECT FRAME " +
+                T("失败  主体占比 ","FAILED  SUBJECT FRAME ") +
                 $"{photoSubjectFrameCoverages[photoIndex]:P1} " +
                 $"<{photoMinimumFrameCoverages[photoIndex]:P1}  " +
                 GetExposureLabel(photoIndex);
@@ -1815,14 +1758,14 @@ public class TakePhoto : MonoBehaviour
         if (!photoUsableExposures[photoIndex])
         {
             return
-                $"FAILED  EXPOSURE  " +
+                T("失败  曝光  ","FAILED  EXPOSURE  ") +
                 GetExposureLabel(photoIndex);
         }
 
         if (!photoUsableNoiseQuality[photoIndex])
         {
             return
-                $"FAILED  SNR " +
+                T("失败  信噪比 ","FAILED  SNR ") +
                 $"{photoSignalToNoiseRatios[photoIndex]:F1}dB  " +
                 GetExposureLabel(photoIndex);
         }
@@ -1830,10 +1773,10 @@ public class TakePhoto : MonoBehaviour
         string denoiseLabel =
             photoNoiseReductionModes[photoIndex] ==
             PhotoNoiseReductionMode.Enabled
-                ? "DENOISED  "
+                ? T("已降噪  ","DENOISED  ")
                 : string.Empty;
         return
-            $"FAILED  {denoiseLabel}" +
+            T("失败  ","FAILED  ")+$"{denoiseLabel}" +
             $"MTF50 {photoMtf50Retentions[photoIndex]:P0}  " +
             $"{photoBlurLengths[photoIndex]:F1}px  " +
             GetExposureLabel(photoIndex);
@@ -1844,14 +1787,14 @@ public class TakePhoto : MonoBehaviour
         float stops = photoExposureStops[photoIndex];
         if (stops > 0.05f)
         {
-            return $"OVER +{stops:F1} EV";
+            return T("过曝 ","OVER ")+$"+{stops:F1} EV";
         }
 
         if (stops < -0.05f)
         {
-            return $"UNDER {stops:F1} EV";
+            return T("欠曝 ","UNDER ")+$"{stops:F1} EV";
         }
 
-        return "EXPOSURE 0.0 EV";
+        return T("曝光 0.0 EV","EXPOSURE 0.0 EV");
     }
 }

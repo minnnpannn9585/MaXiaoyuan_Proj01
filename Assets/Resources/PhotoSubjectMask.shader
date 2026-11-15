@@ -9,6 +9,7 @@ Shader "Hidden/Photography/SubjectMask"
         _Cull("Cull", Float) = 2
         _ZTest("Depth test", Float) = 4
         _ZWrite("Depth write", Float) = 1
+        _UsePhotoVP("Explicit reference camera", Float) = 0
     }
     SubShader
     {
@@ -27,14 +28,17 @@ Shader "Hidden/Photography/SubjectMask"
             SAMPLER(sampler_BaseMap);
             CBUFFER_START(UnityPerMaterial)
                 float4 _BaseMap_ST;
-                float _Cutoff, _AlphaClip, _MaskValue;
+                float _Cutoff, _AlphaClip, _MaskValue, _UsePhotoVP;
+                float4x4 _PhotoVP;
             CBUFFER_END
             struct Attributes { float4 positionOS : POSITION; float2 uv : TEXCOORD0; };
             struct Varyings { float4 positionCS : SV_POSITION; float2 uv : TEXCOORD0; };
             Varyings Vert(Attributes input)
             {
                 Varyings output;
-                output.positionCS = TransformObjectToHClip(input.positionOS.xyz);
+                output.positionCS = _UsePhotoVP > .5
+                    ? mul(_PhotoVP, mul(unity_ObjectToWorld, input.positionOS))
+                    : TransformObjectToHClip(input.positionOS.xyz);
                 output.uv = TRANSFORM_TEX(input.uv, _BaseMap);
                 return output;
             }

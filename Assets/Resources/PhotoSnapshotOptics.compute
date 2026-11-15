@@ -1,0 +1,45 @@
+#pragma kernel ProcessRows
+Texture2D<float4> _Color;
+Texture2D<float> _Depth, _Subject;
+RWTexture2D<float4> _Output;
+SamplerState sampler_LinearClamp;
+int _Width,_Height,_RowStart,_RowCount,_Samples;
+float4 _Lens; // focal length mm, aperture, focus metres, sensor height mm
+float4 _Motion; // exposure seconds * trajectory scale, focal pixels, DOF enabled, motion enabled
+float3 _CameraVelocity, _SubjectVelocity, _AngularVelocity;
+float Radius(float z)
+{
+    float f=_Lens.x,focus=max(_Lens.z*1000,f+1),distance=max(z*1000,f+1);
+    float circle=f*f*abs(distance-focus)/max(.001,_Lens.y*distance*(focus-f));
+    return .5*circle*_Height/_Lens.w*_Motion.z;
+}
+[numthreads(8,8,1)]
+void ProcessRows(uint3 id:SV_DispatchThreadID)
+{
+    if(id.x>=(uint)_Width || id.y>=(uint)_RowCount)return;
+    uint2 p=uint2(id.x,id.y+_RowStart);
+    if(p.y>=(uint)_Height)return;
+    float2 size=float2(_Width,_Height),uv=(p+.5)/size;
+    float z=max(.001,_Depth[p]),radius=Radius(z),subject=saturate(_Subject[p]);
+    float3 velocity=-_CameraVelocity+_SubjectVelocity*subject;
+    float2 angle=(p+.5-size*.5)/_Motion.y;
+    float2 motion=_Motion.y*_Motion.x*float2(
+        (velocity.x-angle.x*velocity.z)/z-_AngularVelocity.y+_AngularVelocity.z*angle.y,
+        (velocity.y-angle.y*velocity.z)/z+_AngularVelocity.x-_AngularVelocity.z*angle.x)*_Motion.w;
+    if(radius<.35 && length(motion)<.35){_Output[p]=_Color[p];return;}
+    float3 color=0;float weight=0;
+    for(int i=0;i<_Samples;i++)
+    {
+        float t=(i+.5)/_Samples;
+        float a=i*2.39996323;
+        float2 offset=radius*sqrt(t)*float2(cos(a),sin(a))+motion*(t-.5);
+        float2 sampleUV=uv+offset/size;
+        if(any(sampleUV<0) || any(sampleUV>1))continue;
+        float sourceDepth=_Depth.SampleLevel(sampler_LinearClamp,sampleUV,0);
+        // Prevent a sharp foreground edge leaking across a defocused background.
+        if(sourceDepth<z*.98 && length(offset)>max(.75,Radius(sourceDepth)))continue;
+        if(sourceDepth>z*1.02 && radius<.35 && length(motion)<.35)continue;
+        color+=_Color.SampleLevel(sampler_LinearClamp,sampleUV,0).rgb;weight++;
+    }
+    _Output[p]=weight>0?float4(color/weight,1):_Color[p];
+}

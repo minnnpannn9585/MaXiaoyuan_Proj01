@@ -49,6 +49,11 @@ public static class PhotoCompositionChecks
                 {
                     measure.Measure(camera,bird.transform,width,width*9/16);
                     rect=measure.SubjectViewportBounds;
+                    float gpuArea=measure.SubjectFrameCoverage;
+                    float cpuVisibility=measure.MeasureCpuReference(camera,bird.transform,width,width*9/16);
+                    if(Mathf.Abs(gpuArea-measure.SubjectFrameCoverage)>.0001f ||
+                        (rect.position-measure.SubjectViewportBounds.position).sqrMagnitude>.000001f || cpuVisibility<.998f)
+                        throw new Exception("GPU/CPU skinned silhouette mismatch for "+pose+" at "+width);
                     if(width==640)low=measure.SubjectFrameCoverage;
                     if(width==1280 && Mathf.Abs(low-measure.SubjectFrameCoverage)>.01f)
                         throw new Exception("Resolution mismatch over one percentage point for "+pose);

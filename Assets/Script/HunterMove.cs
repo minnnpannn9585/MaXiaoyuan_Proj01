@@ -763,6 +763,8 @@ public class HunterMove : MonoBehaviour
 
     private void Fire()
     {
+        TakePhoto pendingPhoto = GetComponent<TakePhoto>();
+        if (pendingPhoto != null && pendingPhoto.IsProcessing) return;
         if (hunterAnimator != null)
         {
             hunterAnimator.SetTrigger(FireParameter);
@@ -784,14 +786,13 @@ public class HunterMove : MonoBehaviour
 
         Vector3 fireDirection = direction.normalized;
         TakePhoto takePhoto = GetComponent<TakePhoto>();
-        bool capturedPlayerClearly = false;
         if (takePhoto != null)
         {
             Rigidbody playerBody = player.GetComponent<Rigidbody>();
             Vector3 playerVelocity = playerBody == null
                 ? Vector3.zero
                 : playerBody.velocity;
-            capturedPlayerClearly = takePhoto.Capture(
+            takePhoto.StartCoroutine(takePhoto.Capture(
                 origin,
                 fireDirection,
                 player.transform,
@@ -823,9 +824,14 @@ public class HunterMove : MonoBehaviour
                 sharpMtf50,
                 minimumMtf50Retention,
                 minimumSuccessfulFrameCoverage,
-                minimumVisibleSubjectFraction);
+                minimumVisibleSubjectFraction,
+                RegisterPhotoResult));
         }
+        else RegisterFailedPhoto();
+    }
 
+    private void RegisterPhotoResult(bool capturedPlayerClearly)
+    {
         if (GameManager.Instance != null)
         {
             if (capturedPlayerClearly)

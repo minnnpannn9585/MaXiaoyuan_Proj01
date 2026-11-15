@@ -152,7 +152,8 @@ public class ThirdPersonCamera : MonoBehaviour
 
     private void Update()
     {
-        if (Input.GetKeyDown(KeyCode.Escape))
+        if(GameFlow.BlocksGameplay){SetCursorCaptured(false);return;}
+        if (GameFlow.Instance==null && Input.GetKeyDown(KeyCode.Escape))
         {
             if (TakePhoto.IsBackpackOpen)
             {
@@ -178,6 +179,7 @@ public class ThirdPersonCamera : MonoBehaviour
 
     private void LateUpdate()
     {
+        if(GameFlow.BlocksGameplay)return;
         FindTarget();
         if (target == null)
         {

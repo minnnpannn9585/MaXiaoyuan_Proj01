@@ -1,0 +1,54 @@
+#pragma kernel Tiles
+#pragma kernel Reduce
+Texture2D<float4> _Black, _White, _Reference, _ReferenceBlack;
+struct Stats { float total; float visible; uint minX; uint minY; uint maxX; uint maxY; };
+RWStructuredBuffer<Stats> _Tiles;
+RWStructuredBuffer<Stats> _Result;
+int _Width, _Height, _GroupsX, _GroupCount;
+groupshared float total[256], visible[256];
+groupshared uint minX[256], minY[256], maxX[256], maxY[256];
+[numthreads(16,16,1)]
+void Tiles(uint3 p:SV_DispatchThreadID, uint3 group:SV_GroupID, uint lane:SV_GroupIndex)
+{
+    float full=0, seen=0;
+    bool inside=p.x<(uint)_Width && p.y<(uint)_Height;
+    if(inside)
+    {
+        full=saturate(dot(_Reference[p.xy].rgb-_ReferenceBlack[p.xy].rgb,float3(1.0/3,1.0/3,1.0/3)));
+        if(full<.01) full=0;
+        seen=min(full,saturate(dot(_White[p.xy].rgb-_Black[p.xy].rgb,float3(1.0/3,1.0/3,1.0/3))));
+    }
+    total[lane]=full; visible[lane]=seen;
+    minX[lane]=full>0?p.x:0xffffffff; minY[lane]=full>0?p.y:0xffffffff;
+    // Exclusive upper edge makes empty bounds unambiguous.
+    maxX[lane]=full>0?p.x+1:0; maxY[lane]=full>0?p.y+1:0;
+    GroupMemoryBarrierWithGroupSync();
+    for(uint stride=128;stride>0;stride>>=1)
+    {
+        if(lane<stride)
+        {
+            total[lane]+=total[lane+stride]; visible[lane]+=visible[lane+stride];
+            minX[lane]=min(minX[lane],minX[lane+stride]); minY[lane]=min(minY[lane],minY[lane+stride]);
+            maxX[lane]=max(maxX[lane],maxX[lane+stride]); maxY[lane]=max(maxY[lane],maxY[lane+stride]);
+        }
+        GroupMemoryBarrierWithGroupSync();
+    }
+    if(lane==0)
+    {
+        Stats s; s.total=total[0]; s.visible=visible[0];
+        s.minX=minX[0];s.minY=minY[0];s.maxX=maxX[0];s.maxY=maxY[0];
+        _Tiles[group.y*_GroupsX+group.x]=s;
+    }
+}
+[numthreads(1,1,1)]
+void Reduce(uint3 id:SV_DispatchThreadID)
+{
+    Stats s;s.total=0;s.visible=0;s.minX=0xffffffff;s.minY=0xffffffff;s.maxX=0;s.maxY=0;
+    for(int i=0;i<_GroupCount;i++)
+    {
+        Stats t=_Tiles[i];s.total+=t.total;s.visible+=t.visible;
+        s.minX=min(s.minX,t.minX);s.minY=min(s.minY,t.minY);
+        s.maxX=max(s.maxX,t.maxX);s.maxY=max(s.maxY,t.maxY);
+    }
+    _Result[0]=s;
+}
