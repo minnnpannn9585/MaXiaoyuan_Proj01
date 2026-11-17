@@ -14,6 +14,7 @@ public static class HunterNavigationInstaller
         if (EditorApplication.isPlaying) throw new InvalidOperationException("Build outside Play Mode.");
         var hunters = UnityEngine.Object.FindObjectsOfType<HunterMove>();
         if (hunters.Length == 0) throw new InvalidOperationException("No hunter in scene.");
+        ConfigureWaterExclusion();
         foreach (var hunter in hunters)
         {
             var agent = hunter.GetComponent<NavMeshAgent>();
@@ -83,6 +84,34 @@ public static class HunterNavigationInstaller
         Debug.Log("Hunter NavMesh bake started; " + rocksMarked + " rocks marked Not Walkable. After completion, run Tools/Hunter/Finish Scene Navigation.");
     }
 
+    public static float ConfigureWaterExclusion()
+    {
+        var water=GameObject.Find("Unity URP Water");
+        if(water==null)throw new InvalidOperationException("Cannot locate Gaia water surface; aborting navigation bake.");
+        const float clearance=.6f;
+        float ceiling=water.transform.position.y+clearance;
+        var terrains=Terrain.activeTerrains;
+        if(terrains.Length==0)throw new InvalidOperationException("No terrain bounds for water exclusion.");
+        var bounds=new Bounds(terrains[0].transform.position,Vector3.zero);
+        foreach(var terrain in terrains)bounds.Encapsulate(new Bounds(terrain.transform.position+terrain.terrainData.size*.5f,terrain.terrainData.size));
+        var go=GameObject.Find("Hunter Water Exclusion");
+        if(go==null){go=new GameObject("Hunter Water Exclusion");Undo.RegisterCreatedObjectUndo(go,"Exclude water from navigation");}
+        Undo.RecordObject(go.transform,"Set water exclusion bounds");
+        float bottom=Mathf.Min(bounds.min.y-20,ceiling-20);
+        go.transform.position=new Vector3(bounds.center.x,(bottom+ceiling)*.5f,bounds.center.z);
+        go.transform.rotation=Quaternion.identity;go.transform.localScale=Vector3.one;
+        var volume=go.GetComponent<NavMeshModifierVolume>();if(volume==null)volume=Undo.AddComponent<NavMeshModifierVolume>(go);
+        Undo.RecordObject(volume,"Mark submerged surfaces not walkable");
+        volume.center=Vector3.zero;volume.size=new Vector3(bounds.size.x+20,ceiling-bottom,bounds.size.z+20);
+        volume.area=NavMesh.GetAreaFromName("Not Walkable");EditorUtility.SetDirty(volume);
+        foreach(var hunter in UnityEngine.Object.FindObjectsOfType<HunterNavigation>())
+        {
+            var data=new SerializedObject(hunter);data.FindProperty("waterSurface").objectReferenceValue=water.transform;
+            data.FindProperty("shorelineClearance").floatValue=clearance;data.ApplyModifiedProperties();
+        }
+        return ceiling;
+    }
+
     [MenuItem("Tools/Hunter/Finish Scene Navigation")]
     public static string Finish()
     {
@@ -105,3 +134,4 @@ public static class HunterNavigationInstaller
         return "Saved hunter navigation. Triangles: " + NavMesh.CalculateTriangulation().indices.Length / 3;
     }
 }
+

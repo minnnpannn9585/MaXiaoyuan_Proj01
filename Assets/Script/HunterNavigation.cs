@@ -8,6 +8,10 @@ public sealed class HunterNavigation : MonoBehaviour
 {
     [SerializeField, Min(.1f)] private float repathInterval = .4f;
     [SerializeField, Min(.1f)] private float destinationSampleRadius = 2f;
+    [Header("Water avoidance")]
+    [SerializeField] private Transform waterSurface;
+    [SerializeField, Min(0f)] private float shorelineClearance = .6f;
+    public bool IsDryPoint(Vector3 point) => waterSurface == null || point.y >= waterSurface.position.y + shorelineClearance;
     private NavMeshAgent agent;
     private NavMeshPath path;
     private Vector3 requestedTarget;
@@ -46,13 +50,17 @@ public sealed class HunterNavigation : MonoBehaviour
 
     public bool EnsureReady()
     {
-        if (Ready) return true;
+        if (Ready)
+        {
+            if (IsDryPoint(agent.nextPosition - Vector3.up * agent.baseOffset * Mathf.Abs(transform.lossyScale.y))) return true;
+            Stop(); return false;
+        }
         if (agent == null || !agent.enabled || Time.time < nextBindTime) return false;
         nextBindTime = Time.time + 1f;
         float worldOffset = agent.baseOffset * Mathf.Abs(transform.lossyScale.y);
         Vector3 foot = transform.position - Vector3.up * worldOffset;
         if (NavMesh.SamplePosition(foot, out NavMeshHit hit, destinationSampleRadius, Filter) &&
-            agent.Warp(hit.position + Vector3.up * worldOffset))
+            IsDryPoint(hit.position) && agent.Warp(hit.position + Vector3.up * worldOffset))
         {
             warned = false;
             return Ready;
@@ -87,7 +95,7 @@ public sealed class HunterNavigation : MonoBehaviour
             requested = true;
             failed = !TryProjectTarget(target, out Vector3 destination) ||
                 !agent.CalculatePath(destination, path) || path.status == NavMeshPathStatus.PathInvalid ||
-                path.corners.Length == 0;
+                path.corners.Length == 0 || Array.Exists(path.corners, corner => !IsDryPoint(corner));
             if (failed) agent.ResetPath();
             else
             {
@@ -122,13 +130,13 @@ public sealed class HunterNavigation : MonoBehaviour
         {
             if (hit.collider.GetComponentInParent<PlayerMove>() != null ||
                 hit.collider.GetComponentInParent<HunterMove>() != null || hit.normal.y < .5f) continue;
-            if (NavMesh.SamplePosition(hit.point, out NavMeshHit navHit, destinationSampleRadius, Filter))
+            if (NavMesh.SamplePosition(hit.point, out NavMeshHit navHit, destinationSampleRadius, Filter) && IsDryPoint(navHit.position))
             {
                 destination = navHit.position;
                 return true;
             }
         }
-        if (NavMesh.SamplePosition(target, out NavMeshHit nearby, destinationSampleRadius, Filter))
+        if (NavMesh.SamplePosition(target, out NavMeshHit nearby, destinationSampleRadius, Filter) && IsDryPoint(nearby.position))
         {
             destination = nearby.position;
             return true;

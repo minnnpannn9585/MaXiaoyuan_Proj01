@@ -94,6 +94,7 @@ public sealed class GameFlow : MonoBehaviour
             Open(Page.Pause);
         }
         else if(CurrentPage==Page.Pause)Resume();
+        else if(CurrentPage==Page.Result && TakePhoto.IsBackpackOpen)TakePhoto.Instance.CloseBackpack();
         else if(CurrentPage==Page.Settings||CurrentPage==Page.Guide)Open(returnPage);
         else if(CurrentPage==Page.ConfirmRestart||CurrentPage==Page.ConfirmTitle)Open(returnPage);
     }
@@ -115,7 +116,12 @@ public sealed class GameFlow : MonoBehaviour
     }
     public void Open(Page page)
     {
+        if(page==Page.Result && CurrentPage!=Page.Result && TakePhoto.IsBackpackOpen)TakePhoto.Instance.CloseBackpack();
         CurrentPage=page;Time.timeScale=page==Page.Playing?1f:0f;ApplyCursor();
+    }
+    public void ShowResultPhotos()
+    {
+        if(CurrentPage==Page.Result && TakePhoto.Instance!=null)TakePhoto.Instance.OpenBackpack();
     }
     public void BeginGame()
     {
@@ -168,6 +174,7 @@ public sealed class GameFlow : MonoBehaviour
     }
     private void OnGUI()
     {
+        if(CurrentPage==Page.Result && TakePhoto.IsBackpackOpen)return;
         Styles();var matrix=GUI.matrix;int depth=GUI.depth;GUI.depth=-100;
         float scale=Mathf.Min(Screen.width/1280f,Screen.height/720f);
         GUI.matrix=Matrix4x4.Scale(new Vector3(scale,scale,1));
@@ -254,6 +261,7 @@ public sealed class GameFlow : MonoBehaviour
         if(Button(new Rect(p.x+40,y+70,350,50),T("玩法指南","How to play")))ShowGuide();
         if(Button(new Rect(p.x+410,y+70,350,50),T("设置","Settings")))ShowSettings();
         if(!result&&Button(new Rect(p.x+40,y+140,720,50),T("重新开始","Restart round"))){returnPage=CurrentPage;Open(Page.ConfirmRestart);}
+        if(result&&Button(new Rect(p.x+40,y+140,720,50),T("查看照片","View photos")))ShowResultPhotos();
         if(Button(new Rect(p.x+40,y+210,720,50),T("返回开始页","Return to title"))){returnPage=CurrentPage;Open(Page.ConfirmTitle);}
     }
     private void DrawHUD(float w,float h)

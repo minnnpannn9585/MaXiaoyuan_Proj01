@@ -18,7 +18,11 @@ public class TakePhoto : MonoBehaviour
     }
 
     public static TakePhoto Instance { get; private set; }
+    private static readonly List<TakePhoto> cameras = new List<TakePhoto>();
+    private static int captureSequence;
+    private static bool AnyProcessing => cameras.Exists(camera => camera != null && camera.IsProcessing);
     public static bool IsBackpackOpen => Instance != null && Instance.backpackOpen;
+    private static bool ReviewingResult => GameFlow.Instance != null && GameFlow.Instance.CurrentPage == GameFlow.Page.Result;
 
     [Header("Capture")]
     [SerializeField] private int photoWidth = 1280;
@@ -107,20 +111,18 @@ public class TakePhoto : MonoBehaviour
     private GUIStyle overlayHintStyle;
     private GUIStyle emptyStyle;
 
-    public IReadOnlyList<Texture2D> Photos => photos;
+    public IReadOnlyList<Texture2D> Photos => Instance != null ? Instance.photos : photos;
 
     private void Awake()
     {
-        Instance = this;
-        EnsurePhotoCamera();
-        EnsureShutterSnapshot();
-        EnsureExposureReadback();
-        EnsureExposureAccumulator();
-        photoVisibility.Prewarm(photoWidth, photoHeight);
+        if (Instance == null) { Instance = this; captureSequence = 0; }
+        cameras.Add(this);
+        // Large capture buffers are allocated only when this photographer shoots.
     }
 
     private void OnDestroy()
     {
+        cameras.Remove(this);
         if (readbackPending) pendingReadback.WaitForCompletion();
         gpuDevelopment.Dispose();
         shutterSnapshot?.Dispose();
@@ -194,7 +196,8 @@ public class TakePhoto : MonoBehaviour
 
     private void Update()
     {
-        if(GameFlow.BlocksGameplay)return;
+        if (Instance != this) return;
+        if(GameFlow.BlocksGameplay && !ReviewingResult)return;
         if (Input.GetKeyDown(KeyCode.B))
         {
             SetBackpackOpen(!backpackOpen);
@@ -250,6 +253,7 @@ public class TakePhoto : MonoBehaviour
         float aperture,
         float iso,
         float sceneExposureValue100,
+        float meteringTargetLuminance,
         float exposureCompensation,
         PhotoExposureMode exposureMode,
         bool autoIso,
@@ -275,6 +279,7 @@ public class TakePhoto : MonoBehaviour
         IsProcessing = true;
         try
         {
+            int captureSeed = ++captureSequence;
             var shutterTimer = System.Diagnostics.Stopwatch.StartNew();
             if (direction.sqrMagnitude < 0.0001f)
             {
@@ -371,6 +376,9 @@ public class TakePhoto : MonoBehaviour
             }
             var meterTimer = System.Diagnostics.Stopwatch.StartNew();
             float meteredSceneExposureValue100 = MeterSavedPixels(meterPixels, meterWidth, meterHeight, sceneExposureValue100);
+            // Meter target and sensor calibration are separate. Changing the sensor
+            // calibration on both sides would cancel out and leave photos equally bright.
+            float meteringTargetOffset = Mathf.Log(.18f / Mathf.Clamp(meteringTargetLuminance,.01f,.5f),2f);
             LastMeterMilliseconds = (float)meterTimer.Elapsed.TotalMilliseconds;
             while (!photoVisibility.TryComplete(out subjectVisibilityFraction)) yield return null;
             LastSubjectCoverage = photoVisibility.SubjectFrameCoverage;
@@ -396,7 +404,7 @@ public class TakePhoto : MonoBehaviour
                         MinimumIso = minimumAutomaticIso,
                         MaximumIso = maximumAutomaticIso
                     },
-                    meteredSceneExposureValue100,
+                    meteredSceneExposureValue100 + meteringTargetOffset,
                     exposureCompensation,
                     focalLengthMillimeters);
             PhotoBlurPhysics.Solution blurSolution =
@@ -420,6 +428,9 @@ public class TakePhoto : MonoBehaviour
                     cameraSettings.Iso,
                     sceneExposureValue100,
                     meteredSceneExposureValue100);
+            // Exposure status is relative to the selected metering target; sensor
+            // signal/noise still uses the actual measured scene illumination.
+            exposureSolution.RelativeStops += meteringTargetOffset;
             PhotoDepthOfFieldPhysics.Solution depthOfFieldSolution =
                 PhotoDepthOfFieldPhysics.Solve(
                     focalLengthMillimeters,
@@ -444,7 +455,7 @@ public class TakePhoto : MonoBehaviour
             }
             bool gpuDeveloped = PhotoGpuDevelopment.Supported;
             RenderTexture developedTarget = gpuDeveloped
-                ? gpuDevelopment.Process(shutterSnapshot.Developed, exposureSolution, photos.Count + 1, noiseReductionMode) : shutterSnapshot.Developed;
+                ? gpuDevelopment.Process(shutterSnapshot.Developed, exposureSolution, captureSeed, noiseReductionMode) : shutterSnapshot.Developed;
             Color32[] pixels = null;
             if (SystemInfo.supportsAsyncGPUReadback)
             {
@@ -468,13 +479,27 @@ public class TakePhoto : MonoBehaviour
                 finally { RenderTexture.active = active; Destroy(fallback); }
             }
             while (!photoVisibility.TryComplete(out subjectVisibilityFraction)) yield return null;
-            int width = captureWidth, height = captureHeight, seed = photos.Count + 1;
+            Color32[] sharpPixels = null, subjectMask = null;
+            yield return ReadFrozenPixels(shutterSnapshot.Color, data => sharpPixels = data);
+            yield return ReadFrozenPixels(shutterSnapshot.Subject, data => subjectMask = data);
+            int width = captureWidth, height = captureHeight, seed = captureSeed;
+            float motionMtf50Retention = CalculateMtf50Retention(
+                subjectImageTravelPixels,
+                sharpMtf50);
+            float predictedMtf50Retention =
+                motionMtf50Retention *
+                depthOfFieldSolution.Mtf50Retention;
+            if (noiseReductionMode == PhotoNoiseReductionMode.Enabled)
+            {
+                predictedMtf50Retention *=
+                    exposureSolution.DenoisedMtf50Retention;
+            }
             var processingTimer = System.Diagnostics.Stopwatch.StartNew();
             // This task owns only managed pixels and value snapshots; no scene/texture access.
             var processing = Task.Run(() =>
             {
                 if (!gpuDeveloped) PhotoExposurePhysics.ApplyToPixels(pixels, exposureSolution, seed, width, height, noiseReductionMode);
-                return MeasureSubjectMtf50Retention(pixels, width, shutterPixelRect, sharpMtf50);
+                return MeasureSubjectMtf50Retention(pixels, sharpPixels, subjectMask, width, shutterPixelRect, predictedMtf50Retention);
             });
             while (!processing.IsCompleted) yield return null;
             if (processing.IsFaulted) { Debug.LogException(processing.Exception); yield break; }
@@ -491,17 +516,6 @@ public class TakePhoto : MonoBehaviour
             // Tight 2D bounds from the unobstructed shutter-midpoint silhouette.
             // Occlusion remains a separate pixel-visibility requirement.
             float subjectFrameCoverage = photoVisibility.SubjectFrameCoverage;
-            float motionMtf50Retention = CalculateMtf50Retention(
-                subjectImageTravelPixels,
-                sharpMtf50);
-            float predictedMtf50Retention =
-                motionMtf50Retention *
-                depthOfFieldSolution.Mtf50Retention;
-            if (noiseReductionMode == PhotoNoiseReductionMode.Enabled)
-            {
-                predictedMtf50Retention *=
-                    exposureSolution.DenoisedMtf50Retention;
-            }
             float measuredMtf50Retention = processing.Result;
             float mtf50Retention = Mathf.Min(
                 predictedMtf50Retention,
@@ -538,7 +552,9 @@ public class TakePhoto : MonoBehaviour
                 subjectFrameCoverage,
                 minimumSubjectFrameCoverage,
                 subjectVisibilityFraction,
-                minimumVisibleSubjectFraction);
+                minimumVisibleSubjectFraction,
+                photoVisibility.SubjectViewportBounds,
+                photoVisibility.SubjectPixelCount >= 1f);
             lastCaptureTime = Time.unscaledTime;
             LastCompletionFrame = Time.frameCount;
             // A pause must not discard an in-flight score. Scene destruction stops the coroutine.
@@ -615,6 +631,21 @@ public class TakePhoto : MonoBehaviour
         return closestPoint;
     }
 
+    private IEnumerator ReadFrozenPixels(RenderTexture source, System.Action<Color32[]> completed)
+    {
+        if(SystemInfo.supportsAsyncGPUReadback)
+        {
+            pendingReadback=AsyncGPUReadback.Request(source,0,TextureFormat.RGBA32);readbackPending=true;
+            while(!pendingReadback.done)yield return null;
+            readbackPending=false;
+            if(!pendingReadback.hasError){completed(pendingReadback.GetData<Color32>().ToArray());yield break;}
+        }
+        var active=RenderTexture.active;
+        var read=new Texture2D(source.width,source.height,TextureFormat.RGBA32,false,true);
+        try{RenderTexture.active=source;read.ReadPixels(new Rect(0,0,source.width,source.height),0,0,false);completed(read.GetPixels32());}
+        finally{RenderTexture.active=active;Destroy(read);}
+    }
+
     private static float CalculateMtf50Retention(
         float blurLengthPixels,
         float sharpMtf50)
@@ -657,24 +688,29 @@ public class TakePhoto : MonoBehaviour
     }
 
     private static float MeasureSubjectMtf50Retention(
-        Color32[] pixels, int photoWidth, RectInt pixelRect, float sharpMtf50)
+        Color32[] pixels, Color32[] reference, Color32[] mask, int photoWidth, RectInt pixelRect, float fallback)
     {
         int width = pixelRect.width;
         int height = pixelRect.height;
-        if (width < 15 || height < 15)
+        if (width < 7 || height < 7)
         {
-            return 0f;
+            return fallback;
         }
 
         float[] luminance = new float[width * height];
+        float[] developed = new float[width * height];
+        // Integral image of non-subject pixels: every profile sample (including
+        // tangent averaging) must be well inside the visible bird, never background.
+        int stride=width+1;
+        int[] invalid=new int[(width+1)*(height+1)];
         for (int y = 0; y < height; y++)
         {
             int sourceRow = (pixelRect.yMin + y) * photoWidth;
             int targetRow = y * width;
             for (int x = 0; x < width; x++)
             {
-                Color32 pixel =
-                    pixels[sourceRow + pixelRect.xMin + x];
+                int source=sourceRow + pixelRect.xMin + x;
+                Color32 pixel = reference[source];
                 float red = Mathf.GammaToLinearSpace(pixel.r / 255f);
                 float green = Mathf.GammaToLinearSpace(pixel.g / 255f);
                 float blue = Mathf.GammaToLinearSpace(pixel.b / 255f);
@@ -682,16 +718,25 @@ public class TakePhoto : MonoBehaviour
                     red * 0.2126f +
                     green * 0.7152f +
                     blue * 0.0722f;
+                Color32 output=pixels[source];
+                developed[targetRow+x]=Mathf.GammaToLinearSpace(output.r/255f)*.2126f+
+                    Mathf.GammaToLinearSpace(output.g/255f)*.7152f+Mathf.GammaToLinearSpace(output.b/255f)*.0722f;
+                invalid[(y+1)*stride+x+1]=(mask[source].r<250?1:0)+invalid[y*stride+x+1]+invalid[(y+1)*stride+x]-invalid[y*stride+x];
             }
         }
 
         List<MtfEdgeCandidate> candidates =
             new List<MtfEdgeCandidate>();
-        const int profileRadius = 6;
+        int profileRadius = Mathf.Clamp(Mathf.Min(width,height)/24,3,6);
+        const int grid=6, perRegion=3;
+        int[] regionArea=new int[grid*grid];
         for (int y = profileRadius; y < height - profileRadius; y++)
         {
             for (int x = profileRadius; x < width - profileRadius; x++)
             {
+                int x0=x-profileRadius,y0=y-profileRadius,x1=x+profileRadius+1,y1=y+profileRadius+1;
+                if(invalid[y1*stride+x1]-invalid[y0*stride+x1]-invalid[y1*stride+x0]+invalid[y0*stride+x0]!=0)continue;
+                regionArea[(y*grid/height)*grid+x*grid/width]++;
                 float gradientX =
                     -GetLuminance(luminance, width, x - 1, y - 1) -
                     2f * GetLuminance(luminance, width, x - 1, y) -
@@ -727,12 +772,15 @@ public class TakePhoto : MonoBehaviour
             (left, right) =>
                 right.Strength.CompareTo(left.Strength));
         List<Vector2> acceptedLocations = new List<Vector2>();
-        List<float> measuredFrequencies = new List<float>();
+        var regions=new List<float>[grid*grid];
+        for(int r=0;r<regions.Length;r++)regions[r]=new List<float>();
         for (int i = 0;
-            i < candidates.Count && measuredFrequencies.Count < 32;
+            i < candidates.Count;
             i++)
         {
             MtfEdgeCandidate candidate = candidates[i];
+            int region=(candidate.Y*grid/height)*grid+candidate.X*grid/width;
+            if(regions[region].Count>=perRegion)continue;
             Vector2 location = new Vector2(
                 candidate.X,
                 candidate.Y);
@@ -755,26 +803,55 @@ public class TakePhoto : MonoBehaviour
                     width,
                     height,
                     candidate,
-                    out float measuredFrequency))
+                    out float referenceFrequency, profileRadius))
             {
                 continue;
             }
 
             acceptedLocations.Add(location);
-            measuredFrequencies.Add(measuredFrequency);
+            float retention;
+            if(TryMeasureEdgeMtf50(developed,width,height,candidate,out float measuredFrequency,profileRadius,.008f))
+                retention=Mathf.Clamp01(measuredFrequency/Mathf.Max(.001f,referenceFrequency));
+            else
+            {
+                // Only a genuinely flat, non-clipped patch proves a reference detail
+                // vanished. Low contrast, clipping or irregular/noisy profiles are unknown.
+                float low=1f,high=0f;
+                for(int yy=candidate.Y-profileRadius;yy<=candidate.Y+profileRadius;yy++)
+                    for(int xx=candidate.X-profileRadius;xx<=candidate.X+profileRadius;xx++)
+                    {float v=developed[yy*width+xx];low=Mathf.Min(low,v);high=Mathf.Max(high,v);}
+                retention=high-low<.004f && low>.015f && high<.95f ? 0f : float.NaN;
+            }
+            regions[region].Add(retention);
         }
-
-        if (measuredFrequencies.Count == 0)
+        var estimates=new List<Vector2>();float totalArea=0;
+        for(int r=0;r<regions.Length;r++)
         {
-            return 0f;
+            if(regionArea[r]==0)continue;
+            // Every interior region has a vote, including those without measurable
+            // texture. A few measurable sharp regions cannot replace the rest of the bird.
+            var valid=regions[r].FindAll(v=>!float.IsNaN(v));
+            valid.Sort();
+            float score=valid.Count==0 ? fallback : valid.Count%2==1 ? valid[valid.Count/2]
+                : (valid[valid.Count/2-1]+valid[valid.Count/2])*.5f;
+            // A lone edge is weak evidence; use the physical estimate for the remainder.
+            float confidence=Mathf.Clamp01(valid.Count/2f);
+            score=Mathf.Lerp(fallback,score,confidence);
+            estimates.Add(new Vector2(Mathf.Min(fallback,score),regionArea[r]));
+            totalArea+=regionArea[r];
         }
-
-        measuredFrequencies.Sort();
-        float medianMtf50 =
-            measuredFrequencies[measuredFrequencies.Count / 2];
-        return Mathf.Clamp01(
-            medianMtf50 /
-            Mathf.Clamp(sharpMtf50, 0.001f, 0.5f));
+        if(totalArea==0)return fallback;
+        estimates.Sort((a,b)=>a.x.CompareTo(b.x));
+        // Area-weighted 10% trimmed mean: retain broad detail evidence without
+        // either the worst patch or a handful of sharp tips dominating the result.
+        float start=totalArea*.1f,end=totalArea*.9f,cumulative=0,sum=0,weightSum=0;
+        foreach(var estimate in estimates)
+        {
+            float next=cumulative+estimate.y;
+            float weight=Mathf.Max(0,Mathf.Min(end,next)-Mathf.Max(start,cumulative));
+            sum+=weight*estimate.x;weightSum+=weight;cumulative=next;
+        }
+        return weightSum>0?Mathf.Clamp01(sum/weightSum):fallback;
     }
 
     private bool TryGetSubjectPixelRect(
@@ -860,14 +937,14 @@ public class TakePhoto : MonoBehaviour
         int width,
         int height,
         MtfEdgeCandidate candidate,
-        out float mtf50)
+        out float mtf50, int radius=6, float minimumContrast=.04f)
     {
         mtf50 = 0f;
         Vector2 normal = new Vector2(
             candidate.GradientX,
             candidate.GradientY).normalized;
         Vector2 tangent = new Vector2(-normal.y, normal.x);
-        const int profileCount = 21;
+        int profileCount = 4*(radius-1)+1;
         const float sampleSpacing = 0.5f;
         float[] profile = new float[profileCount];
         for (int sample = 0; sample < profileCount; sample++)
@@ -899,7 +976,7 @@ public class TakePhoto : MonoBehaviour
 
         float edgeContrast =
             profile[profileCount - 1] - profile[0];
-        if (Mathf.Abs(edgeContrast) < 0.04f)
+        if (Mathf.Abs(edgeContrast) < minimumContrast)
         {
             return false;
         }
@@ -1063,12 +1140,25 @@ public class TakePhoto : MonoBehaviour
         float subjectFrameCoverage,
         float minimumFrameCoverage,
         float subjectVisibilityFraction,
-        float minimumVisibilityFraction)
+        float minimumVisibilityFraction,
+        Rect subjectBounds,
+        bool subjectInFrame)
     {
+        // Keep a single album/UI, while each photographer owns its capture buffers.
+        if (Instance != null && Instance != this)
+        {
+            Instance.StorePhoto(photo, accepted, capturedPlayer, mtf50Retention, blurLengthPixels,
+                exposureStops, usableExposure, signalToNoiseRatioDecibels, noiseReductionMode,
+                usableNoiseQuality, focusDistanceMeters, defocusBlurDiameterPixels, exposureMode,
+                autoIso, cameraSettings, subjectFrameCoverage, minimumFrameCoverage,
+                subjectVisibilityFraction, minimumVisibilityFraction, subjectBounds, subjectInFrame);
+            return;
+        }
+        lastCaptureTime = Time.unscaledTime;
         photos.Add(photo);
         photoAccepted.Add(accepted);
         photoCapturedPlayers.Add(capturedPlayer);
-        photoSubjectsInFrame.Add(photoVisibility.SubjectPixelCount >= 1f);
+        photoSubjectsInFrame.Add(subjectInFrame);
         photoMtf50Retentions.Add(mtf50Retention);
         photoBlurLengths.Add(blurLengthPixels);
         photoExposureStops.Add(exposureStops);
@@ -1084,7 +1174,7 @@ public class TakePhoto : MonoBehaviour
         photoApertures.Add(cameraSettings.Aperture);
         photoIsoValues.Add(cameraSettings.Iso);
         photoSubjectFrameCoverages.Add(subjectFrameCoverage);
-        photoSubjectBounds.Add(photoVisibility.SubjectViewportBounds);
+        photoSubjectBounds.Add(subjectBounds);
         photoMinimumFrameCoverages.Add(minimumFrameCoverage);
         photoSubjectVisibilityFractions.Add(subjectVisibilityFraction);
         photoMinimumVisibilityFractions.Add(minimumVisibilityFraction);
@@ -1125,6 +1215,7 @@ public class TakePhoto : MonoBehaviour
     }
 
     public void CloseBackpack() { SetBackpackOpen(false); }
+    public void OpenBackpack() { SetBackpackOpen(true); }
 
     private void SetBackpackOpen(bool open)
     {
@@ -1139,12 +1230,13 @@ public class TakePhoto : MonoBehaviour
             : Camera.main.GetComponent<ThirdPersonCamera>();
         if (cameraController != null)
         {
-            cameraController.SetCursorCaptured(!open);
+            cameraController.SetCursorCaptured(!open && !GameFlow.BlocksGameplay);
         }
         else
         {
-            Cursor.lockState = open ? CursorLockMode.None : CursorLockMode.Locked;
-            Cursor.visible = open;
+            bool capture = !open && !GameFlow.BlocksGameplay;
+            Cursor.lockState = capture ? CursorLockMode.Locked : CursorLockMode.None;
+            Cursor.visible = !capture;
         }
     }
 
@@ -1370,7 +1462,8 @@ public class TakePhoto : MonoBehaviour
 
     private void OnGUI()
     {
-        if(GameFlow.BlocksGameplay)return;
+        if (Instance != this) return;
+        if(GameFlow.BlocksGameplay && !(ReviewingResult && backpackOpen))return;
         Font oldFont=GUI.skin.font;
         if(GameLanguage.Font!=null)GUI.skin.font=GameLanguage.Font;
         float scale = Mathf.Clamp(Screen.height / 720f, 0.8f, 1.5f);
@@ -1421,7 +1514,7 @@ public class TakePhoto : MonoBehaviour
 
     private void DrawCaptureToast(float screenWidth, float screenHeight)
     {
-        if (IsProcessing && !backpackOpen)
+        if (AnyProcessing && !backpackOpen)
         {
             GUI.Box(new Rect(screenWidth - 306f, screenHeight - 82f, 290f, 54f),
                 T("照片处理中…\n可以继续移动", "Processing photo…\nKeep playing"));
@@ -1482,12 +1575,17 @@ public class TakePhoto : MonoBehaviour
 
         GUI.Label(
             new Rect(panel.x + 24f, panel.y + 16f, 420f, 36f),
-            T("摄影师的照片", "Photographer Backpack")+$"  {photos.Count}/{maxStoredPhotos}"+(IsProcessing?T(" · 处理中…", " · Processing…"):string.Empty),
+            T("摄影师的照片", "Photographer Backpack")+$"  {photos.Count}/{maxStoredPhotos}"+(AnyProcessing?T(" · 处理中…", " · Processing…"):string.Empty),
             overlayTitleStyle);
         GUI.Label(
             new Rect(panel.xMax - 360f, panel.y + 20f, 336f, 28f),
-            T("点击照片放大    B 关闭", "Click a photo to enlarge    B Close"),
+            ReviewingResult ? T("点击照片放大    B / Esc 返回结算", "Click to enlarge    B / Esc Results") : T("点击照片放大    B 关闭", "Click a photo to enlarge    B Close"),
             overlayHintStyle);
+
+        if(ReviewingResult && GUI.Button(new Rect(panel.center.x-100f,panel.yMax-58f,200f,36f),T("返回结算","Back to results")))
+        {
+            CloseBackpack();return;
+        }
 
         if (photos.Count == 0)
         {
@@ -1559,7 +1657,7 @@ public class TakePhoto : MonoBehaviour
 
             GUI.enabled = true;
             GUI.Label(
-                new Rect(panel.x, navY, panel.width, 32f),
+                new Rect(panel.x, ReviewingResult ? navY-32f : navY, panel.width, 32f),
                 T("页码", "Page")+$" {backpackPage + 1}/{pageCount}",
                 emptyStyle);
         }
@@ -1721,8 +1819,8 @@ public class TakePhoto : MonoBehaviour
             string quality =
                 photoNoiseReductionModes[photoIndex] ==
                 PhotoNoiseReductionMode.Enabled
-                    ? T("已降噪  ","DENOISED  ")+$"MTF50 {photoMtf50Retentions[photoIndex]:P0}"
-                    : $"MTF50 {photoMtf50Retentions[photoIndex]:P0}  " +
+                    ? T("已降噪  ","DENOISED  ")+T("清晰度保留率 ","Sharpness retained ")+$"{photoMtf50Retentions[photoIndex]:P0}"
+                    : T("清晰度保留率 ","Sharpness retained ")+$"{photoMtf50Retentions[photoIndex]:P0}  " +
                         $"SNR {photoSignalToNoiseRatios[photoIndex]:F0}dB";
             return
                 T("合格  ","CLEAR  ")+$"{quality}  " +
@@ -1777,7 +1875,7 @@ public class TakePhoto : MonoBehaviour
                 : string.Empty;
         return
             T("失败  ","FAILED  ")+$"{denoiseLabel}" +
-            $"MTF50 {photoMtf50Retentions[photoIndex]:P0}  " +
+            T("清晰度保留率 ","Sharpness retained ")+$"{photoMtf50Retentions[photoIndex]:P0}  " +
             $"{photoBlurLengths[photoIndex]:F1}px  " +
             GetExposureLabel(photoIndex);
     }

@@ -73,6 +73,8 @@ public class HunterMove : MonoBehaviour
     [SerializeField, Min(25f)] private float iso = 100f;
     [Tooltip("EV100 calibration when the metered rendered luminance is 18 percent gray.")]
     [SerializeField] private float sceneExposureValue100 = 15.32f;
+    [Tooltip("Automatic metering target in linear light. 0.127279 is half a stop darker than the previous 0.18 target, at zero exposure compensation.")]
+    [SerializeField, Range(.01f,.5f)] private float meteringTargetLuminance = .12727922f;
     [Tooltip("Additional output exposure adjustment in stops.")]
     [SerializeField] private float exposureCompensation = 0f;
     [Tooltip("Photos darker than this relative exposure fail the clarity check.")]
@@ -806,6 +808,7 @@ public class HunterMove : MonoBehaviour
                 aperture,
                 iso,
                 sceneExposureValue100,
+                meteringTargetLuminance,
                 exposureCompensation,
                 exposureMode,
                 autoIso,
