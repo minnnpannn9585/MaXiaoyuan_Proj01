@@ -6,7 +6,7 @@ using UnityEngine.Rendering.Universal;
 [DefaultExecutionOrder(-1000)]
 public sealed class GameFlow : MonoBehaviour
 {
-    public enum Page { Title, Playing, Pause, Settings, Guide, ConfirmRestart, ConfirmTitle, Result }
+    public enum Page { Title, Playing, Pause, Settings, Guide, ConfirmRestart, ConfirmTitle, Result, Rankings }
     public static GameFlow Instance { get; private set; }
     public static bool BlocksGameplay => Instance != null && Instance.CurrentPage != Page.Playing;
     public Page CurrentPage { get; private set; }
@@ -15,6 +15,7 @@ public sealed class GameFlow : MonoBehaviour
     private Page returnPage;
     private bool titleBackground=true, firstGuide;
     private int guideStep;
+    private int rankingPage;
     private Camera gameCamera, panorama;
     private bool originalCameraEnabled;
     private Vector3 orbitCenter;
@@ -95,7 +96,7 @@ public sealed class GameFlow : MonoBehaviour
         }
         else if(CurrentPage==Page.Pause)Resume();
         else if(CurrentPage==Page.Result && TakePhoto.IsBackpackOpen)TakePhoto.Instance.CloseBackpack();
-        else if(CurrentPage==Page.Settings||CurrentPage==Page.Guide)Open(returnPage);
+        else if(CurrentPage==Page.Settings||CurrentPage==Page.Guide||CurrentPage==Page.Rankings)Open(returnPage);
         else if(CurrentPage==Page.ConfirmRestart||CurrentPage==Page.ConfirmTitle)Open(returnPage);
     }
     private void LateUpdate()
@@ -188,6 +189,7 @@ public sealed class GameFlow : MonoBehaviour
             Panel(new Rect(p.x,p.y,4,p.height),accent);
             if(CurrentPage==Page.Settings)DrawSettings(p);
             else if(CurrentPage==Page.Guide)DrawGuide(p);
+            else if(CurrentPage==Page.Rankings)DrawRankings(p);
             else DrawMenu(p);
         }
         GUI.matrix=matrix;GUI.depth=depth;
@@ -222,10 +224,10 @@ public sealed class GameFlow : MonoBehaviour
     }
     private void DrawGuide(Rect p)
     {
-        var gm=GameManager.Instance;int lose=gm==null?3:gm.ClearPhotosToLose,win=gm==null?10:gm.FailedPhotosToWin;
+        var gm=GameManager.Instance;int initial=gm==null?1000:gm.StartingScore,penalty=gm==null?300:gm.ClearPhotoPenalty,reward=gm==null?100:gm.FailedPhotoReward;
         string[] names={T("别让他拍到好照片","Spoil the perfect shot"),T("从地面到天空","From ground to sky"),T("飞行有代价","Know your limits"),T("看懂他的照片","Learn from each photograph")};
         string[] bodies={
-            T($"你扮演海鸥，摄影师会寻找、靠近并拍摄你。\n\n让他累计拍坏 {win} 张照片即可获胜；被拍到 {lose} 张合格照片则失败。\n\n移动、拉开距离、利用树叶和地形遮挡，让照片失焦、模糊或构图不佳。别一直站着不动。",$"You are the seagull. A photographer searches, approaches and photographs you.\n\nWin by making {win} shots fail. Lose if {lose} shots meet the quality requirements.\n\nMove, keep your distance and use foliage or terrain as cover to spoil focus, sharpness or framing."),
+            T($"你扮演海鸥，摄影师会寻找、靠近并拍摄你。\n\n每局持续完整24个游戏小时，初始 {initial} 分。合格照片每张扣 {penalty} 分，拍摄失败每张加 {reward} 分；分数可为负，不会提前结束。日终查看总分、照片和本机排名。\n\n移动、拉开距离、利用树叶和地形遮挡，让照片失焦、模糊或构图不佳。别一直站着不动。",$"You are the seagull. A photographer searches, approaches and photographs you.\n\nEach round lasts 24 game hours. Start with {initial} points: each good shot costs {penalty}, each failed shot adds {reward}. Negative scores do not end the round. Review your score, photos and local ranking at day end.\n\nMove, keep your distance and use foliage or terrain as cover to spoil focus, sharpness or framing."),
             T("地面：W / A / S / D 行走，单击空格跳跃。\n\n双击空格起飞；飞行中按住空格上升，Shift 下降。\n\nA / D 转向；W / S 或滚轮调节速度。鼠标环顾四周。\n\n飞行会持续前进，不能悬停；速度越慢，转弯越灵活。","Ground: W / A / S / D to walk; tap Space to jump.\n\nDouble-tap Space to take off. Hold Space to climb; Shift to descend.\n\nA / D steer. W / S or the wheel change speed. Move the mouse to look around.\n\nFlight always moves forward. Slower flight allows tighter turns."),
             T("上升消耗较多体力，滑翔缓慢消耗，主动下降不消耗。落地后恢复体力。\n\n飞行中双击空格会主动坠落；体力耗尽或撞到树干也会坠落。\n\n坠落落地后有 3 秒硬直，无法立即逃跑。请提前下降，给自己留出安全空间。","Climbing drains stamina quickly; gliding drains it slowly. Descending costs no stamina. Recover on the ground.\n\nDouble-tapping Space in flight drops you. Exhaustion or a trunk collision also causes a fall.\n\nA crash landing leaves you unable to move for 3 seconds. Descend early and leave room to land."),
             T("按 B 查看摄影师的照片，点击照片放大。\n\n主体占比、遮挡、曝光、清晰度和噪声都会影响照片是否合格。\n\n按 Esc 暂停，可随时回到这份指南或切换语言。\n\n准备好了？先在地面走动，再试着起飞。","Press B to inspect the photographer's shots. Click a photo to enlarge it.\n\nFraming, visibility, exposure, sharpness and noise affect whether a photo counts.\n\nPress Esc to pause, revisit this guide or change language.\n\nReady? Start by walking, then try taking off.")};
@@ -245,7 +247,7 @@ public sealed class GameFlow : MonoBehaviour
     private void DrawMenu(Rect p)
     {
         bool confirm=CurrentPage==Page.ConfirmRestart||CurrentPage==Page.ConfirmTitle;
-        string label=CurrentPage==Page.Result?(GameManager.Instance.HasWon?T("逃出镜头！","OUT OF FRAME!"):T("被拍到了","CAUGHT ON CAMERA")):confirm?T("结束当前这一局？","Leave this round?"):T("已暂停","Paused");
+        string label=CurrentPage==Page.Result?T("一日结束","DAY COMPLETE"):confirm?T("结束当前这一局？","Leave this round?"):T("已暂停","Paused");
         GUI.Label(new Rect(p.x+40,p.y+40,720,80),label,heading);
         if(confirm)
         {
@@ -255,23 +257,62 @@ public sealed class GameFlow : MonoBehaviour
             return;
         }
         bool result=CurrentPage==Page.Result;
-        if(result)GUI.Label(new Rect(p.x+40,p.y+125,700,80),GameManager.Instance.HasWon?T("你让摄影师错过了足够多的好镜头。","You spoiled enough shots to stay free."):T("摄影师已经收集到足够多的合格照片。","The photographer collected enough successful shots."),text);
+        if(result)
+        {
+            var gm=GameManager.Instance;
+            string status=gm.IsSettling?T("正在处理最后的照片… 分数尚未确定","Developing final shots… score pending"):
+                T($"总分 {gm.Score}    本机历史排名 #{gm.FinalRank}",$"Score {gm.Score}    Local rank #{gm.FinalRank}");
+            GUI.Label(new Rect(p.x+40,p.y+120,720,40),status,text);
+            GUI.Label(new Rect(p.x+40,p.y+165,720,60),T($"基础 {gm.StartingScore} − 合格 {gm.ClearPlayerPhotos}×{gm.ClearPhotoPenalty} + 失败 {gm.FailedPlayerPhotos}×{gm.FailedPhotoReward}",$"Base {gm.StartingScore} − Good {gm.ClearPlayerPhotos}×{gm.ClearPhotoPenalty} + Failed {gm.FailedPlayerPhotos}×{gm.FailedPhotoReward}"),small);
+        }
         float y=p.y+(result?235:155);
+        bool canLeave=!result || GameManager.Instance.ResultsReady;
+        GUI.enabled=canLeave;
         if(Button(new Rect(p.x+40,y,720,55),result?T("再来一局","Play again"):T("继续游戏","Resume"),true)){if(result)Reload(true);else Resume();}
-        if(Button(new Rect(p.x+40,y+70,350,50),T("玩法指南","How to play")))ShowGuide();
+        GUI.enabled=true;
+        if(result)
+        {
+            GUI.enabled=GameManager.Instance.ResultsReady;
+            if(Button(new Rect(p.x+40,y+70,350,50),T("本机排行榜","Local rankings"))){returnPage=Page.Result;rankingPage=0;Open(Page.Rankings);}
+            GUI.enabled=true;
+        }
+        else if(Button(new Rect(p.x+40,y+70,350,50),T("玩法指南","How to play")))ShowGuide();
         if(Button(new Rect(p.x+410,y+70,350,50),T("设置","Settings")))ShowSettings();
         if(!result&&Button(new Rect(p.x+40,y+140,720,50),T("重新开始","Restart round"))){returnPage=CurrentPage;Open(Page.ConfirmRestart);}
         if(result&&Button(new Rect(p.x+40,y+140,720,50),T("查看照片","View photos")))ShowResultPhotos();
+        GUI.enabled=canLeave;
         if(Button(new Rect(p.x+40,y+210,720,50),T("返回开始页","Return to title"))){returnPage=CurrentPage;Open(Page.ConfirmTitle);}
+        GUI.enabled=true;
+    }
+    private void DrawRankings(Rect p)
+    {
+        var gm=GameManager.Instance;var entries=gm.Rankings;
+        GUI.Label(new Rect(p.x+40,p.y+28,720,60),T("本机历史排行榜","LOCAL RANKINGS"),heading);
+        GUI.Label(new Rect(p.x+40,p.y+92,720,35),T("按总分降序 · 同分并列 · 高亮为本局","Highest score first · Tied scores share a rank · Current round highlighted"),small);
+        const int pageSize=7;
+        int pages=Mathf.Max(1,Mathf.CeilToInt(entries.Count/(float)pageSize));rankingPage=Mathf.Clamp(rankingPage,0,pages-1);
+        for(int i=rankingPage*pageSize;i<Mathf.Min(entries.Count,(rankingPage+1)*pageSize);i++)
+        {
+            var e=entries[i];int rank=i+1;while(rank>1 && entries[rank-2].score==e.score)rank--;
+            float y=p.y+145+(i%pageSize)*44;
+            if(e.id==gm.RoundId)Panel(new Rect(p.x+30,y-2,740,42),new Color(.2f,.3f,.25f));
+            GUI.Label(new Rect(p.x+40,y,720,40),$"#{rank}     {e.score}     {e.date}     "+T($"合格 {e.clear} / 失败 {e.failed}",$"Good {e.clear} / Failed {e.failed}"),small);
+        }
+        if(Button(new Rect(p.x+40,p.y+510,180,50),T("返回","Back")))Open(returnPage);
+        GUI.enabled=rankingPage>0;if(Button(new Rect(p.x+260,p.y+510,150,50),T("上一页","Previous")))rankingPage--;
+        GUI.enabled=rankingPage<pages-1;if(Button(new Rect(p.x+610,p.y+510,150,50),T("下一页","Next")))rankingPage++;
+        GUI.enabled=true;GUI.Label(new Rect(p.x+445,p.y+520,150,30),$"{rankingPage+1} / {pages}",small);
     }
     private void DrawHUD(float w,float h)
     {
         if(TakePhoto.IsBackpackOpen)return;
         var player=PlayerMove.Instance;var gm=GameManager.Instance;if(player==null||gm==null)return;
-        Panel(new Rect(24,24,340,126),ink);
+        Panel(new Rect(24,24,420,170),ink);
         GUI.Label(new Rect(42,34,310,30),T("体力","STAMINA")+"   "+Mathf.RoundToInt(player.Stamina01*100)+"%",small);
         Panel(new Rect(42,70,300,5),new Color(.2f,.28f,.28f));Panel(new Rect(42,70,300*player.Stamina01,5),player.Stamina01<.25f?new Color(.95f,.45f,.3f):accent);
-        GUI.Label(new Rect(42,89,310,50),T($"合格照片 {gm.ClearPlayerPhotos}/{gm.ClearPhotosToLose}   拍摄失败 {gm.FailedPlayerPhotos}/{gm.FailedPhotosToWin}",$"Good shots {gm.ClearPlayerPhotos}/{gm.ClearPhotosToLose}   Failed {gm.FailedPlayerPhotos}/{gm.FailedPhotosToWin}"),small);
+        GUI.Label(new Rect(42,85,390,30),T($"分数 {gm.Score}    合格 {gm.ClearPlayerPhotos} / 失败 {gm.FailedPlayerPhotos}",$"Score {gm.Score}    Good {gm.ClearPlayerPhotos} / Failed {gm.FailedPlayerPhotos}"),small);
+        int hour=Mathf.FloorToInt(gm.CurrentHour), minute=Mathf.FloorToInt((gm.CurrentHour-hour)*60f);
+        GUI.Label(new Rect(42,119,390,55),T($"时间 {hour:00}:{minute:00}    剩余 {gm.RemainingHours:F1} 游戏小时",$"Time {hour:00}:{minute:00}    {gm.RemainingHours:F1} game hours left"),small);
         Panel(new Rect(24,h-66,840,42),ink);
         GUI.Label(new Rect(40,h-60,810,32),player.IsFlying?T("A/D 转向 · W/S 或滚轮调速 · 空格上升 · Shift 下降 · Esc 菜单","A/D Steer · W/S or Wheel Speed · Space Climb · Shift Descend · Esc Menu"):T("WASD 行走 · 空格跳跃 · 双击空格起飞 · B 照片 · Esc 菜单","WASD Walk · Space Jump · Double Space Take off · B Photos · Esc Menu"),small);
         if(player.IsFlying)GUI.Label(new Rect(w-250,30,220,35),T("目标速度 ","Target speed ")+player.TargetFlightSpeed.ToString("F1")+" m/s",text);

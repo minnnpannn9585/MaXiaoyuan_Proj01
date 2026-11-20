@@ -20,7 +20,7 @@ public class TakePhoto : MonoBehaviour
     public static TakePhoto Instance { get; private set; }
     private static readonly List<TakePhoto> cameras = new List<TakePhoto>();
     private static int captureSequence;
-    private static bool AnyProcessing => cameras.Exists(camera => camera != null && camera.IsProcessing);
+    public static bool AnyProcessing => cameras.Exists(camera => camera != null && camera.IsProcessing);
     public static bool IsBackpackOpen => Instance != null && Instance.backpackOpen;
     private static bool ReviewingResult => GameFlow.Instance != null && GameFlow.Instance.CurrentPage == GameFlow.Page.Result;
 
@@ -275,7 +275,7 @@ public class TakePhoto : MonoBehaviour
         float minimumVisibleSubjectFraction,
         System.Action<bool> onCompleted)
     {
-        if (IsProcessing) yield break;
+        if (IsProcessing || (GameManager.Instance != null && !GameManager.Instance.IsRunning)) yield break;
         IsProcessing = true;
         try
         {

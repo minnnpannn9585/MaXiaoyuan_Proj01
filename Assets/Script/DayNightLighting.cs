@@ -94,7 +94,14 @@ public sealed class DayNightLighting : MonoBehaviour
     private void Update()
     {
         if(!initialized)return;
-        if(advanceTime)timeOfDay=AdvanceHour(timeOfDay,Time.deltaTime,dayLengthMinutes);
+        var round = GameManager.Instance;
+        if(advanceTime && (round == null || round.IsRunning))
+        {
+            float hours = Time.deltaTime * 24f / (Mathf.Max(.1f, dayLengthMinutes) * 60f);
+            if(round != null) hours = Mathf.Min(hours, round.RemainingHours);
+            timeOfDay = Mathf.Repeat(timeOfDay + hours, 24f);
+            if(round != null) round.AdvanceRoundHours(hours);
+        }
         ApplyLighting();
     }
 

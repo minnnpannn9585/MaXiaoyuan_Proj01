@@ -74,7 +74,7 @@ public class HunterMove : MonoBehaviour
     [Tooltip("EV100 calibration when the metered rendered luminance is 18 percent gray.")]
     [SerializeField] private float sceneExposureValue100 = 15.32f;
     [Tooltip("Automatic metering target in linear light. 0.127279 is half a stop darker than the previous 0.18 target, at zero exposure compensation.")]
-    [SerializeField, Range(.01f,.5f)] private float meteringTargetLuminance = .12727922f;
+    [SerializeField, HideInInspector] private float meteringTargetLuminance = .12727922f;
     [Tooltip("Additional output exposure adjustment in stops.")]
     [SerializeField] private float exposureCompensation = 0f;
     [Tooltip("Photos darker than this relative exposure fail the clarity check.")]
@@ -765,6 +765,7 @@ public class HunterMove : MonoBehaviour
 
     private void Fire()
     {
+        if (GameManager.Instance != null && !GameManager.Instance.IsRunning) return;
         TakePhoto pendingPhoto = GetComponent<TakePhoto>();
         if (pendingPhoto != null && pendingPhoto.IsProcessing) return;
         if (hunterAnimator != null)
@@ -808,7 +809,7 @@ public class HunterMove : MonoBehaviour
                 aperture,
                 iso,
                 sceneExposureValue100,
-                meteringTargetLuminance,
+                GameManager.Instance != null ? GameManager.Instance.PhotographerMeteringTarget : meteringTargetLuminance,
                 exposureCompensation,
                 exposureMode,
                 autoIso,

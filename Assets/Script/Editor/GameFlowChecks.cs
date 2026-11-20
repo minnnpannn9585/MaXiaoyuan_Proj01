@@ -59,9 +59,9 @@ public static class GameFlowChecks
                 case 9:
                     flow.Open(GameFlow.Page.Pause);flow.ShowGuide();Capture("pause-guide-en");break;
                 case 10:
-                    flow.Resume();for(int i=0;i<GameManager.Instance.FailedPhotosToWin;i++)GameManager.Instance.RegisterFailedPlayerPhoto();break;
+                    flow.Resume();GameManager.Instance.AdvanceRoundHours(24f);break;
                 case 11:
-                    Require(GameManager.Instance.HasWon&&flow.CurrentPage==GameFlow.Page.Result&&Time.timeScale==0,"Result page failed");Capture("result-en");break;
+                    Require(GameManager.Instance.ResultsReady&&flow.CurrentPage==GameFlow.Page.Result&&Time.timeScale==0,"Result page failed");Capture("result-en");break;
                 case 12:
                     flow.ShowGuide();typeof(GameFlow).GetField("guideStep",System.Reflection.BindingFlags.NonPublic|System.Reflection.BindingFlags.Instance).SetValue(flow,1);Capture("guide-flight-en");break;
                 case 13:

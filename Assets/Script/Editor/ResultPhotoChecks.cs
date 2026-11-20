@@ -39,9 +39,9 @@ public static class ResultPhotoChecks
                         typeof(TakePhoto).GetMethod("StorePhoto",Flags).Invoke(album,new object[]{photo,false,true,.8f,1f,0f,true,30f,PhotoNoiseReductionMode.Disabled,true,10f,0f,(PhotoExposureMode)0,true,
                             new PhotoExposurePhysics.CameraSettings{ShutterSpeed=1000,Aperture=4,Iso=400},.2f,.15f,1f,.7f,new Rect(.3f,.3f,.4f,.5f),true});
                     }
-                    for(int i=0;i<gm.FailedPhotosToWin;i++)gm.RegisterFailedPlayerPhoto();break;
+                    for(int i=0;i<9;i++)gm.RegisterFailedPlayerPhoto();gm.AdvanceRoundHours(24f);break;
                 case 1:
-                    Check(flow.CurrentPage==GameFlow.Page.Result&&gm.HasWon,"Win result missing");
+                    Check(flow.CurrentPage==GameFlow.Page.Result&&gm.ResultsReady,"Daily result missing");
                     ScreenCapture.CaptureScreenshot(Folder+"/result.png");break;
                 case 2: flow.ShowResultPhotos();break;
                 case 3:
@@ -52,11 +52,11 @@ public static class ResultPhotoChecks
                 case 6:
                     album.CloseBackpack();
                     Check(flow.CurrentPage==GameFlow.Page.Result&&!TakePhoto.IsBackpackOpen&&Cursor.lockState==CursorLockMode.None&&Time.timeScale==0,"Return to result failed");
-                    typeof(GameManager).GetField("state",Flags).SetValue(gm,GameManager.GameState.Lost);
+
                     flow.ShowResultPhotos();break;
                 case 7:
-                    Check(!gm.HasWon&&TakePhoto.IsBackpackOpen&&album.Photos.Count==9&&Time.timeScale==0,"Loss album failed");
-                    album.CloseBackpack();Finish("PASS: win/loss albums, nine photos and pagination, enlarged view, return to results, cursor unlocked, game remains paused.");break;
+                    Check(gm.ResultsReady&&TakePhoto.IsBackpackOpen&&album.Photos.Count==9&&Time.timeScale==0,"Daily album failed");
+                    album.CloseBackpack();Finish("PASS: daily result albums, nine photos and pagination, enlarged view, return to results, cursor unlocked, game remains paused.");break;
             }
         }
         catch(Exception e){Finish(e.ToString());Debug.LogException(e);}
